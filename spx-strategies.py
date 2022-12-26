@@ -150,7 +150,7 @@ class Strategy:
             curr_lost_c, curr_lost_p = self.get_amount_lost(filtered_df,contract_date, strike_sp, strike_lp, strike_sc, strike_lc)
             return pd.Series([trade_count,curr_lost_c, curr_lost_p])
 
-        df1 = filtered_df[(filtered_df['quote_date'] == 'contract_date')]
+        df1 = filtered_df[(filtered_df['quote_date'] == contract_date)]
 
         if curr_lost_p == 0.0:
             if strike_sp == 0.0:
