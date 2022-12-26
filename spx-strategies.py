@@ -13,7 +13,7 @@ class Strategy:
         if target_delta ==-1:
             return pd.Series([0,0,0])
 #         df1 = i_df[(i_df['quote_date']==curr_date) & (i_df['expiration']==contract_date)].min()
-        df1 = i_df[(i_df['quote_date']==curr_date) & (i_df['expiration']==contract_date)]
+        df1 = i_df[(i_df['quote_date']==curr_date) & (i_df['expiration']==contract_date)].iloc[0]
         price = (df1['ask']+df1['bid'])/0.02 # 0.02 is dividing by two and multiplying by 100
         if np.isnan(price):
             return pd.Series([0,0,0])
@@ -22,7 +22,7 @@ class Strategy:
 
     def get_collected_from_strike(self, curr_date, contract_date, strike, i_df):   
 #         df1 = i_df[(i_df['quote_date']==curr_date) & (i_df['expiration']==contract_date) & (i_df['strike']==strike)].min()
-        df1 = i_df[(i_df['quote_date']==curr_date) & (i_df['expiration']==contract_date) & (i_df['strike']==strike)]
+        df1 = i_df[(i_df['quote_date']==curr_date) & (i_df['expiration']==contract_date) & (i_df['strike']==strike)].iloc[0]
         price = (df1['ask']+df1['bid'])/0.02 # 0.02 is dividing by two and multiplying by 100
         if np.isnan(price):
             return pd.Series([0,0,0])
