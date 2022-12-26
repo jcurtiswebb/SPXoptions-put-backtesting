@@ -254,7 +254,7 @@ class OptimalIronCondorStrategy(Strategy):
         self.delta_lp = params['delta_sp'] - params['delta_p_offset'] if params['delta_sp'] - params['delta_p_offset'] > 0.0 else 0
         self.delta_sc = params['delta_sc']
         self.delta_lc = params['delta_sc'] - params['delta_c_offset'] if params['delta_sc'] - params['delta_c_offset'] > 0.0 else 0
-        self.summary = f"Optimal Iron Condor Strategy | DSP : {self.delta_sp}; DLP : {self.delta_lp}; DSC : {self.delta_sc}; DLC : {self.delta_lc}"
+        self.summary = f"Optimal Iron Condor Strategy | DSP : {round(self.delta_sp,3)}; DLP : {round(self.delta_lp,3)}; DSC : {round(self.delta_sc,3)}; DLC : {round(self.delta_lc,3)}"
         super().__init__(trade_dates)
     
     def get_deltas(self):
