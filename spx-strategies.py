@@ -122,6 +122,12 @@ class Strategy:
     def get_amount_lost(self,df,contract_date, strike_sp, strike_lp, strike_sc, strike_lc):
         df1 = df[(df['quote_date']==contract_date) & (df['expiration']==contract_date) & (df['quote_time']=='16:00:00')]
         underlying = df1['price']
+        
+        if len(underlying)==0:
+            raise Exception(f"Fatal error. Underlying price not found for date : {contract_date} and time : {quote_time}")
+        
+        underlying = underlying.iloc[0]
+        
         total_lost_c = 0.0
         total_lost_p = 0.0
         if strike_sc != 0.0:   
