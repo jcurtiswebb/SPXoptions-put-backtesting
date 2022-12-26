@@ -119,7 +119,7 @@ class Strategy:
                                                 quote_time, row['trade_count'], df_qt), axis=1).T.values
         return df_trades
         
-    def get_amount_lost(self,contract_date, strike_sp, strike_lp, strike_sc, strike_lc):
+    def get_amount_lost(self,df,contract_date, strike_sp, strike_lp, strike_sc, strike_lc):
         df1 = df[(df['quote_date']==contract_date) & (df['expiration']==contract_date) & (df['quote_time']=='16:00:00')]
         underlying = df1['price']
         total_lost_c = 0.0
@@ -147,7 +147,7 @@ class Strategy:
             return pd.Series([trade_count, curr_lost_c, curr_lost_p])
 
         if (quote_time == '16:00:00'):
-            curr_lost_c, curr_lost_p = self.get_amount_lost(contract_date, strike_sp, strike_lp, strike_sc, strike_lc)
+            curr_lost_c, curr_lost_p = self.get_amount_lost(filtered_df,contract_date, strike_sp, strike_lp, strike_sc, strike_lc)
             return pd.Series([trade_count,curr_lost_c, curr_lost_p])
 
         df1 = filtered_df[(filtered_df['quote_date'] == 'contract_date')]
