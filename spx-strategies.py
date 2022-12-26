@@ -104,12 +104,12 @@ class Strategy:
         df_trades['collected'] = df_trades['collected_sc'] + df_trades['collected_lc'] + df_trades['collected_sp'] + df_trades['collected_lp']
         return df_trades
     
-    def make_minute_decision(self,df_trades, df_qt):
+    def make_minute_decision(self,df_trades, df_qt, quote_time):
         df_trades['trade_count'],df_trades['lost_c_s'], df_trades['lost_p_s'] = df_trades.apply(
             lambda row : self.get_amount_lost_minute(row['expiration'], row['strike_sp'], row['strike_lp'], row['strike_sc'], 
                                                 row['strike_lc'], row['collected_sc'] + row['collected_lc'], 
                                                 row['collected_sp'] + row['collected_lp'],row['lost_c_s'], row['lost_p_s'],  
-                                                str(trow[0]), row['trade_count'], df_qt), axis=1).T.values
+                                                quote_time, row['trade_count'], df_qt), axis=1).T.values
         return df_trades
         
     def get_amount_lost(self,contract_date, strike_sp, strike_lp, strike_sc, strike_lc):
