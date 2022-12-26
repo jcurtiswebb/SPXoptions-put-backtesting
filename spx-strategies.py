@@ -103,7 +103,86 @@ class Strategy:
                 
         df_trades['collected'] = df_trades['collected_sc'] + df_trades['collected_lc'] + df_trades['collected_sp'] + df_trades['collected_lp']
         return df_trades
+    
+    def make_minute_decision(self,df_trades, df_qt):
+        df_trades['trade_count'],df_trades['lost_c_s'], df_trades['lost_p_s'] = df_trades.apply(
+            lambda row : self.get_amount_lost_minute(row['expiration'], row['strike_sp'], row['strike_lp'], row['strike_sc'], 
+                                                row['strike_lc'], row['collected_sc'] + row['collected_lc'], 
+                                                row['collected_sp'] + row['collected_lp'],row['lost_c_s'], row['lost_p_s'],  
+                                                str(trow[0]), row['trade_count'], df_qt), axis=1).T.values
+        return df_trades
         
+    def get_amount_lost(self,contract_date, strike_sp, strike_lp, strike_sc, strike_lc):
+        df1 = df[(df['quote_date']==contract_date) & (df['expiration']==contract_date) & (df['quote_time']=='16:00:00')]
+        underlying = df1['price']
+        total_lost_c = 0.0
+        total_lost_p = 0.0
+        if strike_sc != 0.0:   
+            if underlying > strike_sc:
+                total_lost_c = total_lost_c + (underlying - strike_sc)*100
+        if strike_lc != 0.0:
+            if underlying > strike_lc:
+                total_lost_c = total_lost_c - (underlying - strike_lc)*100
+        if strike_sp != 0.0:
+            if underlying < strike_sp:
+                total_lost_p = total_lost_p + (strike_sp - underlying)*100
+        if strike_lp != 0.0:
+            if underlying < strike_lp:
+                total_lost_p = total_lost_p - (strike_lp - underlying)*100
+        return pd.Series([total_lost_c, total_lost_p])
+
+    def get_amount_lost_minute(self,contract_date, strike_sp, strike_lp, strike_sc, strike_lc, 
+                               curr_collected_c, curr_collected_p, curr_lost_c, curr_lost_p, 
+                               quote_time, trade_count, filtered_df):
+        # TODO fix max_loss. it nees to be parameterized
+        max_loss = 100
+        if curr_lost_p > 0.0 and curr_lost_c > 0.0:
+            return pd.Series([trade_count, curr_lost_c, curr_lost_p])
+
+        if (quote_time == '16:00:00'):
+            curr_lost_c, curr_lost_p = self.get_amount_lost(contract_date, strike_sp, strike_lp, strike_sc, strike_lc)
+            return pd.Series([trade_count,curr_lost_c, curr_lost_p])
+
+        df1 = filtered_df[(filtered_df['quote_date'] == 'contract_date')]
+
+        if curr_lost_p == 0.0:
+            if strike_sp == 0.0:
+                bb_cost_sp = 0.0
+            else:
+                df_sp = df1[(df1['strike']==strike_sp) & (df1['type']=='P')]
+                bb_cost_sp = (df_sp['ask']+df_sp['bid'])/0.02
+
+            if strike_lp == 0.0:
+                bb_cost_lp = 0.0
+            else:
+                df_lp = df1[(df1['strike']==strike_lp) & (df1['type']=='P')]
+                bb_cost_lp = -1*(df_lp['ask']+df_lp['bid'])/0.02
+
+            curr_cost_to_buy_back_p = bb_cost_sp + bb_cost_lp
+
+            if curr_cost_to_buy_back_p > max_loss*curr_collected_p:
+                trade_count += 2
+                curr_lost_p += curr_cost_to_buy_back_p
+
+        if curr_lost_c == 0.0:
+            if strike_sc == 0.0:
+                bb_cost_sc = 0.0
+            else:
+                df_sc = df1[(df1['strike']==strike_sc) & (df1['type']=='C')]
+                bb_cost_sc = (df_sc['ask']+df_sc['bid'])/0.02
+
+            if strike_lc == 0.0:
+                bb_cost_lc = 0.0
+            else:
+                df_lc = df1[(df1['strike']==strike_lc)  & (df1['type']=='C')]
+                bb_cost_lc = -1*(df_lc['ask']+df_lc['bid'])/0.02
+
+            curr_cost_to_buy_back_c = bb_cost_sc + bb_cost_lc
+            if curr_cost_to_buy_back_c > max_loss*curr_collected_c:
+                trade_count += 2
+                curr_lost_c += curr_cost_to_buy_back_c
+                
+        return pd.Series([trade_count,curr_lost_c,curr_lost_p])
     
     @abstractmethod
     def __str__(self):
