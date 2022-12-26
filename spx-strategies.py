@@ -175,7 +175,12 @@ class Strategy:
             if strike_sc == 0.0:
                 bb_cost_sc = 0.0
             else:
-                df_sc = df1[(df1['strike']==strike_sc) & (df1['type']=='C')].min()
+                df_sc = df1[(df1['strike']==strike_sc) & (df1['type']=='C')]
+                # if we don't have our strike, this is a major problem
+                if len(df_sc)==0:
+                    bb_cost_sc = 0.0
+                    raise Exception(f"Fatal error. Option Type C | Strike : {strike_sc} not found for date : {contract_date}")
+                df_sc = df_sc.iloc[0]
                 bb_cost_sc = (df_sc['ask']+df_sc['bid'])/0.02
 
             if strike_lc == 0.0:
