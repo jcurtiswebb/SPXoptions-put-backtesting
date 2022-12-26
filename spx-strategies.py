@@ -156,13 +156,21 @@ class Strategy:
             if strike_sp == 0.0:
                 bb_cost_sp = 0.0
             else:
-                df_sp = df1[(df1['strike']==strike_sp) & (df1['type']=='P')].min()
+                df_sp = df1[(df1['strike']==strike_sp) & (df1['type']=='P')]
+                if len(df_sp)==0:
+                    bb_cost_sp = 0.0
+                    raise Exception(f"Fatal error. Option Type P | Strike : {strike_sp} not found for date : {contract_date} and time : {quote_time}")
+                df_sp = df_sp.iloc[0]
                 bb_cost_sp = (df_sp['ask']+df_sp['bid'])/0.02
 
             if strike_lp == 0.0:
                 bb_cost_lp = 0.0
             else:
-                df_lp = df1[(df1['strike']==strike_lp) & (df1['type']=='P')].min()
+                df_lp = df1[(df1['strike']==strike_lp) & (df1['type']=='P')]
+                if len(df_lp)==0:
+                    bb_cost_lp = 0.0
+                    raise Exception(f"Fatal error. Option Type P | Strike : {strike_lp} not found for date : {contract_date} and time : {quote_time}")
+                df_lp = df_lp.iloc[0]
                 bb_cost_lp = -1*(df_lp['ask']+df_lp['bid'])/0.02
 
             curr_cost_to_buy_back_p = bb_cost_sp + bb_cost_lp
@@ -179,14 +187,18 @@ class Strategy:
                 # if we don't have our strike, this is a major problem
                 if len(df_sc)==0:
                     bb_cost_sc = 0.0
-                    raise Exception(f"Fatal error. Option Type C | Strike : {strike_sc} not found for date : {contract_date}")
+                    raise Exception(f"Fatal error. Option Type C | Strike : {strike_sc} not found for date : {contract_date} and time : {quote_time}")
                 df_sc = df_sc.iloc[0]
                 bb_cost_sc = (df_sc['ask']+df_sc['bid'])/0.02
 
             if strike_lc == 0.0:
                 bb_cost_lc = 0.0
             else:
-                df_lc = df1[(df1['strike']==strike_lc)  & (df1['type']=='C')].min()
+                df_lc = df1[(df1['strike']==strike_lc)  & (df1['type']=='C')]
+                if len(df_lc)==0:
+                    bb_cost_lc = 0.0
+                    raise Exception(f"Fatal error. Option Type C | Strike : {strike_lc} not found for date : {contract_date} and time : {quote_time}")
+                df_lc = df_lc.iloc[0]
                 bb_cost_lc = -1*(df_lc['ask']+df_lc['bid'])/0.02
 
             curr_cost_to_buy_back_c = bb_cost_sc + bb_cost_lc
