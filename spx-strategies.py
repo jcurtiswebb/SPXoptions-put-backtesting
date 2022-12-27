@@ -300,10 +300,9 @@ class OptimalIronCondorStrategy(Strategy):
     
     def make_minute_decision(self,df_trades, df_qt, quote_time):
         df_trades['trade_count'],df_trades['lost_c_s'], df_trades['lost_p_s'] = df_trades.apply(
-            lambda row : super().get_amount_lost_minute(row['expiration'], row['strike_sp'], row['strike_lp'], row['strike_sc'], 
-                                                row['strike_lc'], row['collected_sc'] + row['collected_lc'], 
-                                                row['collected_sp'] + row['collected_lp'],row['lost_c_s'], row['lost_p_s'],  
-                                                quote_time, row['trade_count'], df_qt, self.max_loss), axis=1).T.values
+            lambda row : self.get_amount_lost_minute(row['expiration'], row['strike_sp'], row['strike_lp'], row['strike_sc'], row['strike_lc'], row['collected_sc'] + row['collected_lc'], 
+                                                row['collected_sp'] + row['collected_lp'],row['lost_c_s'], row['lost_p_s'],  quote_time, row['trade_count'], df_qt, self.max_loss), axis=1).T.values
+        return df_trades
     
     def __str__(self):
         return self.summary
