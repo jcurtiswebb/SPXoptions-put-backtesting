@@ -72,7 +72,6 @@ class Strategy:
         else:
             df_lc = df_c[(df_c['delta']>= df_c['delta_lc_target'])]# We don't know for certain how many expirations we have for a given quote date, so lets group on each and find min delta
             df_lc = df_lc.loc[df_lc.groupby(['quote_date'])[['delta']].idxmin()['delta']]
-            df_lc.to_csv('df_lp_test.csv')
             df_trades['strike_lc'],df_trades['delta_lc'],df_trades['collected_lc'] = df_trades.apply(
                 lambda row : self.get_contract_strike(row['trade_date'], row['expiration'],row['delta_lc_target'], df_lc), axis = 1).T.values
             df_trades['collected_lc'] = df_trades['collected_lc']*-1
