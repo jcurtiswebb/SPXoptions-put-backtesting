@@ -145,9 +145,8 @@ class Strategy:
 
     def get_amount_lost_minute(self,contract_date, strike_sp, strike_lp, strike_sc, strike_lc, 
                                curr_collected_c, curr_collected_p, curr_lost_c, curr_lost_p, 
-                               quote_time, trade_count, filtered_df):
-        # TODO fix max_loss. it nees to be parameterized
-        max_loss = 100
+                               quote_time, trade_count, filtered_df, max_loss = 100):
+
         if curr_lost_p > 0.0 and curr_lost_c > 0.0:
             return pd.Series([trade_count, curr_lost_c, curr_lost_p])
 
@@ -283,6 +282,7 @@ class OptimalIronCondorStrategy(Strategy):
         self.delta_lp = params['delta_sp'] - params['delta_p_offset'] if params['delta_sp'] - params['delta_p_offset'] > 0.0 else 0
         self.delta_sc = params['delta_sc']
         self.delta_lc = params['delta_sc'] - params['delta_c_offset'] if params['delta_sc'] - params['delta_c_offset'] > 0.0 else 0
+        self.max_loss = params['max_loss']
         self.summary = f"Optimal Iron Condor Strategy | DSP : {round(self.delta_sp,3)}; DLP : {round(self.delta_lp,3)}; DSC : {round(self.delta_sc,3)}; DLC : {round(self.delta_lc,3)}"
         super().__init__(trade_dates)
     
@@ -297,6 +297,13 @@ class OptimalIronCondorStrategy(Strategy):
         self.df['lc_offset'] = 0
         self.df.fillna(-1,inplace=True)
         return self.df
+    
+    def make_minute_decision(self,df_trades, df_qt, quote_time):
+        df_trades['trade_count'],df_trades['lost_c_s'], df_trades['lost_p_s'] = df_trades.apply(
+            lambda row : self.get_amount_lost_minute(row['expiration'], row['strike_sp'], row['strike_lp'], row['strike_sc'], 
+                                                row['strike_lc'], row['collected_sc'] + row['collected_lc'], 
+                                                row['collected_sp'] + row['collected_lp'],row['lost_c_s'], row['lost_p_s'],  
+                                                quote_time, row['trade_count'], df_qt, self.max_loss), axis=1).T.values
     
     def __str__(self):
         return self.summary
