@@ -123,7 +123,7 @@ class Strategy:
         underlying = df1['price']
         
         if len(underlying)==0:
-            raise Exception(f"Fatal error. Underlying price not found for date : {contract_date} and time : {quote_time}")
+            raise Exception(f"Fatal error. Underlying price not found for date : {contract_date} and time : '16:00:00'")
         
         underlying = underlying.iloc[0]
         
