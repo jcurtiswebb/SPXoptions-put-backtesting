@@ -40,8 +40,7 @@ class Strategy:
     def get_deltas(self):
         pass
     
-    def populate_trades(self, df, df_trades):
-        purchase_time = '09:45:00'
+    def populate_trades(self, df, df_trades, purchase_time):
         df_var_delta = self.get_deltas()
         df = pd.merge(df, df_var_delta, left_on='expiration', right_index=True)
         df_trades = pd.merge(df_trades, df_var_delta, left_on='expiration', right_index=True)
