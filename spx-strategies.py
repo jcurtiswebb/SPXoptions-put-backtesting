@@ -5,8 +5,9 @@ import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 from abc import ABC, abstractmethod
 
 class Strategy:
-    def __init__(self, trade_dates):
+    def __init__(self, trade_dates, purchase_time):
         self.df = pd.DataFrame(trade_dates)
+        self.purchase_time = purchase_time
         
     def get_contract_strike(self, curr_date, contract_date, target_delta, i_df):
         # -1 means no delta should be selected
@@ -40,7 +41,8 @@ class Strategy:
     def get_deltas(self):
         pass
     
-    def populate_trades(self, df, df_trades, purchase_time):
+    def populate_trades(self, df, df_trades):
+        purchase_time = self.purchase_time
         df_var_delta = self.get_deltas()
         df = pd.merge(df, df_var_delta, left_on='expiration', right_index=True)
         df_trades = pd.merge(df_trades, df_var_delta, left_on='expiration', right_index=True)
@@ -221,9 +223,9 @@ class Strategy:
 
     
 class StaticStrategyTest(Strategy):
-    def __init__(self, trade_dates):
+    def __init__(self, trade_dates, purchase_time):
         self.summary = "Static Strategy : "
-        super().__init__(trade_dates)
+        super().__init__(trade_dates, purchase_time)
     
     def get_deltas(self):
         self.df.rename({0: "expiration"}, axis='columns', inplace=True)
@@ -248,12 +250,12 @@ class StaticStrategyTest(Strategy):
 
     
 class SpxThetaStrategy(Strategy):
-    def __init__(self, trade_dates, params):
+    def __init__(self, trade_dates, purchase_time, params):
         self.w_spx = params['w_spx']
         self.w_vix = params['w_vix']
         self.newline = '\n'
         self.summary = f"spxtheta.com Strategy {self.newline} spx w : {round(self.w_spx,3)}; spx w : {round(self.w_vix,3)}"
-        super().__init__(trade_dates)
+        super().__init__(trade_dates, purchase_time)
     
     def get_deltas(self):
         self.df.rename({0: "expiration"}, axis='columns', inplace=True)
@@ -274,7 +276,7 @@ class SpxThetaStrategy(Strategy):
         return self.summary
     
 class OptimalIronCondorStrategy(Strategy):
-    def __init__(self, trade_dates, params):
+    def __init__(self, trade_dates, purchase_time, params):
 #         if not params.has_key('delta_sp') or not params.has_key('delta_lp') or not params.has_key('delta_sc') or not params.has_key('delta_lc'):
 #             raise Exception("params must contain the following keys : delta_sp, delta_lp, delta_sc, delta_lc")
         self.delta_sp = params['delta_sp']
@@ -283,7 +285,7 @@ class OptimalIronCondorStrategy(Strategy):
         self.delta_lc = params['delta_sc'] - params['delta_c_offset'] if params['delta_sc'] - params['delta_c_offset'] > 0.0 else 0
         self.max_loss = params['max_loss']
         self.summary = f"Optimal Iron Condor Strategy | DSP : {round(self.delta_sp,3)}; DLP : {round(self.delta_lp,3)}; DSC : {round(self.delta_sc,3)}; DLC : {round(self.delta_lc,3)}"
-        super().__init__(trade_dates)
+        super().__init__(trade_dates, purchase_time)
     
     def get_deltas(self):
         self.df.rename({0: "expiration"}, axis='columns', inplace=True)
