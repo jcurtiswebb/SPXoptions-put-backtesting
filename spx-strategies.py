@@ -2,6 +2,7 @@
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 from abc import ABC, abstractmethod
+import matplotlib.pyplot as plt
 
 #########
 # Abstract Strategy & Abstract Policy
@@ -22,7 +23,6 @@ class AbstractStrategy(ABC):
        
     def performCalcs(self):
         df_trades = self.df_trades
-        print(self.commission)
         df_trades['commission'] = df_trades['trade_count']*self.commission
         df_trades['lost'] = df_trades['lost_c'] + df_trades['lost_p']
         df_trades['net'] = df_trades['collected'] - df_trades['lost'] - df_trades['commission']
