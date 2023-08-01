@@ -249,8 +249,8 @@ class OptionSelectorStaticEntryPolicy(AbstractStaticEntryPolicy):
         self.option_selector = option_selector
         super().__init__()
     
-    def populateTrades(self, data):
-        df_exp = data.loc[data[data['dte']==self.dte].groupby('expiration')['dte'].idxmin()]
+    def populateTrades(self, df):
+        df_exp = df.loc[df[df['dte']==self.dte].groupby('expiration')['dte'].idxmin()]
         df_dates = df_exp.loc[df_exp.groupby('quote_date')['dte'].idxmin()]
         last_date = df_dates['quote_date'].max()
         df_dates = df_dates[df_dates['expiration']<=last_date]
