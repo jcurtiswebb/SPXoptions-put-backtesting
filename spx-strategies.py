@@ -1,3 +1,4 @@
+# %% [code]
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 from abc import ABC, abstractmethod
@@ -249,7 +250,7 @@ class OptionSelectorStaticEntryPolicy(AbstractStaticEntryPolicy):
         super().__init__()
     
     def populateTrades(self, data):
-        df_exp = df.loc[df[df['dte']==self.dte].groupby('expiration')['dte'].idxmin()]
+        df_exp = data.loc[data[data['dte']==self.dte].groupby('expiration')['dte'].idxmin()]
         df_dates = df_exp.loc[df_exp.groupby('quote_date')['dte'].idxmin()]
         last_date = df_dates['quote_date'].max()
         df_dates = df_dates[df_dates['expiration']<=last_date]
