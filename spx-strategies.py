@@ -119,10 +119,10 @@ class AbstractStrategy(ABC):
         return damp_risk_adj_cum_return
         
     def net2pct(self,x):
-        return (x / initial_portfolio_value)*100
+        return (x / self.initial_portfolio_value)*100
 
     def pct2net(self,x):
-        return initial_portfolio_value * x/100
+        return self.initial_portfolio_value * x/100
         
     @abstractmethod
     def evaluate(self,df):
