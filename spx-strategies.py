@@ -22,7 +22,7 @@ class AbstractStrategy(ABC):
        
     def performCalcs(self):
         df_trades = self.df_trades
-        df_trades['commission'] = df_trades['trade_count']*commission
+        df_trades['commission'] = df_trades['trade_count']*self.commission
         df_trades['lost'] = df_trades['lost_c'] + df_trades['lost_p']
         df_trades['net'] = df_trades['collected'] - df_trades['lost'] - df_trades['commission']
         df_trades['portfolio_value'] = 0.0
