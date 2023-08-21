@@ -593,7 +593,7 @@ class StaticEntryDynamicExitStrategy(AbstractStrategy):
             raise TypeError("Argument 'entry_policy' must be a subclass of 'AbstractStaticEntryPolicy'.")
             
         if not isinstance(exit_policy, AbstractDynamicExitPolicy):
-            raise TypeError("Argument 'entry_policy' must be a subclass of 'AbstractDynamicExitPolicy'.")
+            raise TypeError("Argument 'exit_policy' must be a subclass of 'AbstractDynamicExitPolicy'.")
             
         self.summary = f"{str(entry_policy)} {str(exit_policy)}"
         super().__init__(entry_policy, exit_policy, df_ty, ipv, commission, debug)
@@ -648,7 +648,7 @@ class DynamicEntryDynamicExitStrategy(AbstractStrategy):
         self.entry_policy = entry_policy
             
         if not isinstance(exit_policy, AbstractDynamicExitPolicy):
-            raise TypeError("Argument 'entry_policy' must be a subclass of 'AbstractDynamicExitPolicy'.")
+            raise TypeError("Argument 'exit_policy' must be a subclass of 'AbstractDynamicExitPolicy'.")
         self.exit_policy = exit_policy
         
         self.summary = f"{str(entry_policy)} {str(exit_policy)}"
@@ -730,7 +730,7 @@ class StaticEntryStaticExitStrategy(AbstractStrategy):
             raise TypeError("Argument 'entry_policy' must be a subclass of 'AbstractStaticEntryPolicy'.")
             
         if not isinstance(exit_policy, AbstractStaticExitPolicy):
-            raise TypeError("Argument 'entry_policy' must be a subclass of 'AbstractStaticExitPolicy'.")
+            raise TypeError("Argument 'exit_policy' must be a subclass of 'AbstractStaticExitPolicy'.")
         self.summary = f"{str(entry_policy)} {str(exit_policy)}"
         super().__init__(entry_policy, exit_policy, df_ty, ipv, commission, debug)
         
