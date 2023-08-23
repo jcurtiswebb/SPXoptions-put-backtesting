@@ -140,7 +140,7 @@ class AbstractStrategy(ABC):
             dict_results['Max Net Max Loss'] = round(df_trades['net_max_loss'].max()*100,3)
             dict_results['Mean Return on Max Risk'] = round(df_trades['return_on_max_risk'].mean()*100,3)
             dict_results['Std Dev of Return on Max Risk'] = round(df_trades['return_on_max_risk'].std(),3)
-            dict_results['Cumulative Return On Scaled Max Risk'] = round(df_trades['scaled_return_on_max_risk'].cumprod(),3)
+            dict_results['Cumulative Return On Scaled Max Risk'] = round(df_trades['scaled_return_on_max_risk'].cumprod().iloc[-1],3)
             dict_results['Risk Adj Cumulative Return On Scaled Max Risk'] = round(dict_results['Cumulative Return On Scaled Max Risk']/dict_results['Std Dev of Return on Max Risk'],3)
 
             
