@@ -117,30 +117,31 @@ class AbstractStrategy(ABC):
         # We have two types of charts; naked option charts and spread charts.
         # Lets determine what set of charts to show here:
         if 'net_max_loss' in df_trades.columns:
-            # Let's show spread charts
-            fig, ax = plt.subplots(1, 3)
+            print('uncomment me in spx_strategies')
+#             # Let's show spread charts
+#             fig, ax = plt.subplots(1, 3)
             
-            df_trade_plot = df_trades.copy()
-            df_trade_plot.set_index('expiration', inplace=True)
-            df_trade_plot = df_trade_plot['scaled_return_on_max_risk'].cumprod()
+#             df_trade_plot = df_trades.copy()
+#             df_trade_plot.set_index('expiration', inplace=True)
+#             df_trade_plot = df_trade_plot['scaled_return_on_max_risk'].cumprod()
             
-            df_trade_plot.plot(ax=ax[0,0])
-            plt.title("\n".join(wrap(str(self),50)))
-            plt.grid()
-            plt.savefig(f"{str(self)}.png")
-            if self.debug == False:
-                plt.close(fig)
+#             df_trade_plot.plot(ax=ax[0])
+#             plt.title("\n".join(wrap(str(self),50)))
+#             plt.grid()
+#             plt.savefig(f"{str(self)}.png")
+#             if self.debug == False:
+#                 plt.close(fig)
                 
-            df_trades_transaction_return = df_trades.copy()
-            df_trades_transaction_return['return_on_max_risk'] *= 100 
-            df_trades_transaction_return.set_index('expiration', inplace=True)
-            ax1 = df_trades_transaction_return['return_on_max_risk'].plot(ax=ax[0,1],linestyle='None', marker="o")
-            ax1.set_ylabel('Return on Max Risk %')
-            plt.title("\n".join(wrap(str(self),50)))
-            plt.grid()
-            plt.savefig(f"daily_ret_{str(self)}.png")
-            if self.debug == False:
-                plt.close(fig)
+#             df_trades_transaction_return = df_trades.copy()
+#             df_trades_transaction_return['return_on_max_risk'] *= 100 
+#             df_trades_transaction_return.set_index('expiration', inplace=True)
+#             ax1 = df_trades_transaction_return['return_on_max_risk'].plot(ax=ax[1],linestyle='None', marker="o")
+#             ax1.set_ylabel('Return on Max Risk %')
+#             plt.title("\n".join(wrap(str(self),50)))
+#             plt.grid()
+#             plt.savefig(f"daily_ret_{str(self)}.png")
+#             if self.debug == False:
+#                 plt.close(fig)
             
         else:
             # if you want to scale the chart, you should do it here
