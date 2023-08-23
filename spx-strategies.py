@@ -74,6 +74,7 @@ class AbstractStrategy(ABC):
             df_trades['short_long_balance_put'] = df_trades[lp_cols].gt(0).sum(axis=1) - df_trades[sp_cols].gt(0).sum(axis=1)
             
         if (df_trades['short_long_balance_call'] == 0).all() and (df_trades['short_long_balance_put'] == 0).all():
+            df_trades.drop(['short_long_balance_call','short_long_balance_put'],axis=1,inplace=True)
             # These are spreads we need to calculate: max loss, return on max risk, std deviation of return on max risk, and risk adjusted return on max risk
             df_trades['gross_max_loss'] = df_trades.apply(lambda row : self.get_max_loss(row, sc_cols, lc_cols, sp_cols, lp_cols), axis=1)
             df_trades['net_max_loss'] = df_trades['gross_max_loss'] - df_trades['collected']
@@ -117,13 +118,13 @@ class AbstractStrategy(ABC):
         # Lets determine what set of charts to show here:
         if 'net_max_loss' in df_trades.columns:
             # Let's show spread charts
+            fig, ax = plt.subplots(1, 3)
+            
             df_trade_plot = df_trades.copy()
             df_trade_plot.set_index('expiration', inplace=True)
             df_trade_plot = df_trade_plot['scaled_return_on_max_risk'].cumprod()
             
-            fig = plt.figure()
-            ax = fig.add_subplot(1, 1, 1)
-            df_trade_plot.plot(ax=ax)
+            df_trade_plot.plot(ax=ax[0,0])
             plt.title("\n".join(wrap(str(self),50)))
             plt.grid()
             plt.savefig(f"{str(self)}.png")
@@ -133,9 +134,8 @@ class AbstractStrategy(ABC):
             df_trades_transaction_return = df_trades.copy()
             df_trades_transaction_return['return_on_max_risk'] *= 100 
             df_trades_transaction_return.set_index('expiration', inplace=True)
-            fig = plt.figure()
-            ax = df_trades_transaction_return['return_on_max_risk'].plot(linestyle='None', marker="o")
-            ax.set_ylabel('Return on Max Risk %')
+            ax1 = df_trades_transaction_return['return_on_max_risk'].plot(ax=ax[0,1],linestyle='None', marker="o")
+            ax1.set_ylabel('Return on Max Risk %')
             plt.title("\n".join(wrap(str(self),50)))
             plt.grid()
             plt.savefig(f"daily_ret_{str(self)}.png")
@@ -144,9 +144,7 @@ class AbstractStrategy(ABC):
             
         else:
             # if you want to scale the chart, you should do it here
-            factor = 1.0
             df_trade_plot = df_trades.copy()
-            df_trade_plot['net'] = df_trade_plot['net']*factor
             df_trade_plot.set_index('expiration', inplace=True)
             df_trade_plot = df_trade_plot['net'].cumsum()
 
