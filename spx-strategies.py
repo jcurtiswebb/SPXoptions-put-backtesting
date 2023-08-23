@@ -56,36 +56,6 @@ class AbstractStrategy(ABC):
         df_trades = pd.merge(df_trades, df_ty, left_on='trade_date', right_on='Date')
         df_trades.drop(['Date'],axis=1,inplace=True)
 
-        # if you want to scale the chart, you should do it here
-        factor = 1.0
-        df_trade_plot = df_trades.copy()
-        df_trade_plot['net'] = df_trade_plot['net']*factor
-        df_trade_plot.set_index('expiration', inplace=True)
-        df_trade_plot = df_trade_plot['net'].cumsum()
-        
-        
-        fig = plt.figure()
-        ax = fig.add_subplot(1, 1, 1)
-        secax = ax.secondary_yaxis('right', functions=(self.net2pct, self.pct2net))
-        secax.set_ylabel('% return')
-        df_trade_plot.plot(ax=ax)
-        plt.title("\n".join(wrap(str(self),50)))
-        plt.grid()
-        plt.savefig(f"{str(self)}.png")
-        if self.debug == False:
-            plt.close(fig)
-
-        df_trades_transaction_return = df_trades.copy()
-        df_trades_transaction_return['transaction_return'] *= 100 
-        df_trades_transaction_return.set_index('expiration', inplace=True)
-        fig = plt.figure()
-        ax = df_trades_transaction_return['transaction_return'].plot(linestyle='None', marker="o")
-        ax.set_ylabel('Transaction Return %')
-        plt.title("\n".join(wrap(str(self),50)))
-        plt.grid()
-        plt.savefig(f"daily_ret_{str(self)}.png")
-        if self.debug == False:
-            plt.close(fig)
         
 
         trade_count = df_trades.shape[0]
@@ -143,7 +113,66 @@ class AbstractStrategy(ABC):
             dict_results['Cumulative Return On Scaled Max Risk'] = round(df_trades['scaled_return_on_max_risk'].cumprod().iloc[-1],3)
             dict_results['Risk Adj Cumulative Return On Scaled Max Risk'] = round(dict_results['Cumulative Return On Scaled Max Risk']/dict_results['Std Dev of Return on Max Risk'],3)
 
+        # We have two types of charts; naked option charts and spread charts.
+        # Lets determine what set of charts to show here:
+        if 'net_max_loss' in df_trades.columns:
+            # Let's show spread charts
+            df_trade_plot = df_trades.copy()
+            df_trade_plot.set_index('expiration', inplace=True)
+            df_trade_plot = df_trade_plot['scaled_return_on_max_risk'].cumprod()
             
+            fig = plt.figure()
+            ax = fig.add_subplot(1, 1, 1)
+            df_trade_plot.plot(ax=ax)
+            plt.title("\n".join(wrap(str(self),50)))
+            plt.grid()
+            plt.savefig(f"{str(self)}.png")
+            if self.debug == False:
+                plt.close(fig)
+                
+            df_trades_transaction_return = df_trades.copy()
+            df_trades_transaction_return['return_on_max_risk'] *= 100 
+            df_trades_transaction_return.set_index('expiration', inplace=True)
+            fig = plt.figure()
+            ax = df_trades_transaction_return['return_on_max_risk'].plot(linestyle='None', marker="o")
+            ax.set_ylabel('Return on Max Risk %')
+            plt.title("\n".join(wrap(str(self),50)))
+            plt.grid()
+            plt.savefig(f"daily_ret_{str(self)}.png")
+            if self.debug == False:
+                plt.close(fig)
+            
+        else:
+            # if you want to scale the chart, you should do it here
+            factor = 1.0
+            df_trade_plot = df_trades.copy()
+            df_trade_plot['net'] = df_trade_plot['net']*factor
+            df_trade_plot.set_index('expiration', inplace=True)
+            df_trade_plot = df_trade_plot['net'].cumsum()
+
+
+            fig = plt.figure()
+            ax = fig.add_subplot(1, 1, 1)
+            secax = ax.secondary_yaxis('right', functions=(self.net2pct, self.pct2net))
+            secax.set_ylabel('% return')
+            df_trade_plot.plot(ax=ax)
+            plt.title("\n".join(wrap(str(self),50)))
+            plt.grid()
+            plt.savefig(f"{str(self)}.png")
+            if self.debug == False:
+                plt.close(fig)
+
+            df_trades_transaction_return = df_trades.copy()
+            df_trades_transaction_return['transaction_return'] *= 100 
+            df_trades_transaction_return.set_index('expiration', inplace=True)
+            fig = plt.figure()
+            ax = df_trades_transaction_return['transaction_return'].plot(linestyle='None', marker="o")
+            ax.set_ylabel('Transaction Return %')
+            plt.title("\n".join(wrap(str(self),50)))
+            plt.grid()
+            plt.savefig(f"daily_ret_{str(self)}.png")
+            if self.debug == False:
+                plt.close(fig)
 
         if self.debug:
             print("*****  BACKTEST RESULTS  ****")
