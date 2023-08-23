@@ -33,7 +33,7 @@ class AbstractStrategy(ABC):
             self.df_trades = pd.DataFrame(columns=['trade_date', 'expiration', 'trade_count', 'collected', 'lost_c', 'lost_p'])
        
     def performCalcs(self):
-        if self.df == None:
+        if self.df is None:
             raise RuntimeError("self.df is not set, please manually set it before running performCalcs.")
         
         df = self.df
