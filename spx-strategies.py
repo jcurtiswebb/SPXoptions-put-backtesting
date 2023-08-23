@@ -128,7 +128,7 @@ class AbstractStrategy(ABC):
 
             fig.subplots_adjust(top=0.9)
             plt.subplots_adjust(hspace=0.5)
-            fig.suptitle("\n".join(wrap(str(strat),100)),fontweight=0.5,fontsize=20)
+            fig.suptitle("\n".join(wrap(str(self),100)),fontweight=0.5,fontsize=20)
 
             df_trade_plot = df_trades.copy()
             df_trade_plot.set_index('expiration', inplace=True)
