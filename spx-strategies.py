@@ -106,7 +106,7 @@ class AbstractStrategy(ABC):
         if (df_trades['short_long_balance_call'] == 0).all() and (df_trades['short_long_balance_put'] == 0).all():
             # These are spreads we need to calculate: max loss, net gain per max loss, std deviation of net gain per max loss, and risk adjusted net gain per max loss
             df_trades['max_loss'] = df_trades.apply(lambda row : self.get_max_loss(row, sc_cols, lc_cols, sp_cols, lp_cols), axis=1)
-            df_trades['return_on_max_risk'] = df_trades['net'] / df['max_loss']
+            df_trades['return_on_max_risk'] = df_trades['net'] / df_trades['max_loss']
         
         self.df_trades = df_trades
         dict_results = {'Cumulative return':round(df_trades['cum_return'].iloc[-1]*100,3),
