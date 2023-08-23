@@ -26,12 +26,21 @@ class AbstractStrategy(ABC):
         self.df_ty = df_ty
         self.debug = debug
         self.max_bet_scaling = 0.02
+        self.df = None
         
         # If another method overrode df_trades, we will respect it.
         if hasattr(self, 'df_trades') == False:
             self.df_trades = pd.DataFrame(columns=['trade_date', 'expiration', 'trade_count', 'collected', 'lost_c', 'lost_p'])
        
     def performCalcs(self):
+        if self.df == None:
+            raise RuntimeError("self.df is not set, please manually set it before running performCalcs.")
+        
+        df = self.df
+        exp_dates = self.df['expiration'].unique()
+        df_closing = df[(df['quote_date'].isin(exp_dates))&(df['quote_time']=='16:00:00')].groupby(['quote_date'])['price'].mean()
+        df_trades = df_trades.merge(df_closing.to_frame(), left_on=['expiration'], right_index=True)
+        
         df_trades = self.df_trades
         df_trades['commission'] = df_trades['trade_count']*self.commission
         df_trades['lost'] = df_trades['lost_c'] + df_trades['lost_p']
@@ -405,10 +414,6 @@ class OptionSelectorStaticEntryPolicy(AbstractStaticEntryPolicy):
         df_trades.rename({'quote_date': 'trade_date'}, axis='columns', inplace=True)
         df_trades['trade_count'] = 0
         
-        exp_dates = df_dates['expiration'].unique()
-        df_closing = df[(df['expiration'].isin(exp_dates))&(df['quote_time']=='16:00:00')].groupby(['quote_date'])['price'].mean()
-        df_trades = df_trades.merge(df_closing.to_frame(), left_on=['expiration'], right_index=True)
-        
         df_data = df[(df['quote_time'] == self.trade_time) & (df['dte']==self.dte)]
         
         return self.option_selector.populateTrades(df_data, df_trades, self.get_contract_strike)
@@ -750,7 +755,7 @@ class StaticEntryDynamicExitStrategy(AbstractStrategy):
 
     def evaluate(self,df):
         self.df_trades = self.entry_policy.populateTrades(df)
-        
+        self.df = df
         
         self.df_trades['lost_c'] = 0.0
         self.df_trades['lost_p'] = 0.0
@@ -807,6 +812,7 @@ class DynamicEntryDynamicExitStrategy(AbstractStrategy):
         super().__init__(entry_policy, exit_policy, df_ty, ipv, commission, debug)
 
     def evaluate(self,df):
+        self.df = df
         df.loc[:,'quote_datetime'] = pd.to_datetime(df['quote_date'].astype(str)+' '+df['quote_time'].astype(str))
         df_datetimes = pd.DataFrame(df['quote_datetime'].unique())
         df_datetimes.rename(columns={0: "quote_datetime"},inplace=True)
@@ -885,6 +891,7 @@ class StaticEntryStaticExitStrategy(AbstractStrategy):
         super().__init__(entry_policy, exit_policy, df_ty, ipv, commission, debug)
         
     def evaluate(self,df):
+        self.df = df
         self.df_trades = self.entry_policy.populateTrades(df)
         self.df_trades = self.exit_policy.populateTrades(df, self.df_trades)
         return self.performCalcs()
