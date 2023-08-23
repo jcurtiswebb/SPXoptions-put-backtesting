@@ -519,8 +519,8 @@ class DeltaOptionSelector(AbstractOptionSelector):
         # Add all long calls to df_trades
         for i in range(len(self.long_calls)):
             df_trades[f'delta_lc_target_{i}'] = self.long_calls[i]
-            df_lc = df_c[df_c['delta']>= self.long_calls[i]]# We don't know for certain how many expirations we have for a given quote date, so lets group on each and find min delta
-            df_lc = df_lc.loc[df_lc.groupby(['quote_date'])['delta'].idxmin()]
+            df_lc = df_c[df_c['delta']<= self.long_calls[i]]# We don't know for certain how many expirations we have for a given quote date, so lets group on each and find min delta
+            df_lc = df_lc.loc[df_lc.groupby(['quote_date'])['delta'].idxmax()]
             df_trades[f'strike_lc_{i}'],df_trades[f'delta_lc_{i}'],df_trades[f'collected_lc_{i}'] = df_trades.apply(
                 lambda row : get_contract_strike(row['trade_date'], row['expiration'],row[f'delta_lc_target_{i}'], df_lc, 'buy'), axis = 1).T.values
             df_trades[f'collected_lc_{i}'] = df_trades[f'collected_lc_{i}']*-1
@@ -528,8 +528,8 @@ class DeltaOptionSelector(AbstractOptionSelector):
         # Add all long puts to df_trades
         for i in range(len(self.long_puts)):
             df_trades[f'delta_lp_target_{i}'] = self.long_puts[i]
-            df_lp = df_p[df_p['delta']>= self.long_puts[i]]
-            df_lp = df_lp.loc[df_lp.groupby(['quote_date'])['delta'].idxmin()]
+            df_lp = df_p[df_p['delta']<= self.long_puts[i]]
+            df_lp = df_lp.loc[df_lp.groupby(['quote_date'])['delta'].idxmax()]
             df_trades[f'strike_lp_{i}'],df_trades[f'delta_lp_{i}'],df_trades[f'collected_lp_{i}'] = df_trades.apply(
                 lambda row : get_contract_strike(row['trade_date'], row['expiration'],row[f'delta_lp_target_{i}'], df_lp, 'buy'), axis = 1).T.values
             df_trades[f'collected_lp_{i}']=df_trades[f'collected_lp_{i}']*-1
