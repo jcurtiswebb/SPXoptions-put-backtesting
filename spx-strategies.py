@@ -169,7 +169,7 @@ class AbstractStrategy(ABC):
         max_loss = 0
         
         for c in range(call_count):
-            max_loss =  max((row[sc_cols[c]] - row[lc_cols[c]]), max_loss)
+            max_loss =  max((row[lc_cols[c]] - row[sc_cols[c]]), max_loss)
             
         for p in range(put_count):
             max_loss =  max((row[sp_cols[p]] - row[lp_cols[p]]), max_loss)
