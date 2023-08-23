@@ -2,6 +2,7 @@
 # %% [code]
 # %% [code]
 # %% [code]
+# %% [code]
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 from abc import ABC, abstractmethod
@@ -24,6 +25,7 @@ class AbstractStrategy(ABC):
         self.initial_portfolio_value = initial_portfolio_value
         self.df_ty = df_ty
         self.debug = debug
+        self.max_bet_scaling = 0.02
         
         # If another method overrode df_trades, we will respect it.
         if hasattr(self, 'df_trades') == False:
@@ -92,8 +94,6 @@ class AbstractStrategy(ABC):
         std_trans_return = df_trades['transaction_return'].std()
         std_trans_return_less_rf = (df_trades['transaction_return'] - df_trades['daily_risk_free_return']).std()
         
-        put_balance=0
-        call_balance=0
         sc_cols = [col for col in df_trades.columns.to_list() if 'strike_sc' in col]
         lc_cols = [col for col in df_trades.columns.to_list() if 'strike_lc' in col]
         sp_cols = [col for col in df_trades.columns.to_list() if 'strike_sp' in col]
@@ -104,9 +104,12 @@ class AbstractStrategy(ABC):
             df_trades['short_long_balance_put'] = df_trades[lp_cols].gt(0).sum(axis=1) - df_trades[sp_cols].gt(0).sum(axis=1)
             
         if (df_trades['short_long_balance_call'] == 0).all() and (df_trades['short_long_balance_put'] == 0).all():
-            # These are spreads we need to calculate: max loss, net gain per max loss, std deviation of net gain per max loss, and risk adjusted net gain per max loss
-            df_trades['max_loss'] = df_trades.apply(lambda row : self.get_max_loss(row, sc_cols, lc_cols, sp_cols, lp_cols), axis=1)
+            # These are spreads we need to calculate: max loss, return on max risk, std deviation of return on max risk, and risk adjusted return on max risk
+            df_trades['gross_max_loss'] = df_trades.apply(lambda row : self.get_max_loss(row, sc_cols, lc_cols, sp_cols, lp_cols), axis=1)
+            df_trades['net_max_loss'] = df_trades['gross_max_loss'] - df_trades['collected']
             df_trades['return_on_max_risk'] = df_trades['net'] / df_trades['max_loss']
+            # TODO : can we remove this intermediate calculation and do it in a one-liner
+            df_trades['scaled_return_on_max_risk'] = 1 + (df_trades['return_on_max_risk']*self.max_bet_scaling)
         
         self.df_trades = df_trades
         dict_results = {'Cumulative return':round(df_trades['cum_return'].iloc[-1]*100,3),
@@ -131,6 +134,16 @@ class AbstractStrategy(ABC):
                         'Risk Adj Cumulative Return':round(df_trades['cum_return'].iloc[-1]*100/std_trans_return,3),
                         'Dampened Risk Adj Cumulative Return':round(df_trades['cum_return'].iloc[-1]*100/np.sqrt(std_trans_return),3)
                        }
+        if 'net_max_loss' in df_trades.columns:
+            # add our new spread max loss columns to the dictionary
+            dict_results['Mean Net Max Loss'] = round(df_trades['net_max_loss'].mean()*100,3)
+            dict_results['Max Net Max Loss'] = round(df_trades['net_max_loss'].max()*100,3)
+            dict_results['Mean Return on Max Risk'] = round(df_trades['return_on_max_risk'].mean()*100,3)
+            dict_results['Std Dev of Return on Max Risk'] = round(df_trades['return_on_max_risk'].std(),3)
+            dict_results['Cumulative Return On Scaled Max Risk'] = round(df_trades['scaled_return_on_max_risk'].cumprod(),3)
+            dict_results['Risk Adj Cumulative Return On Scaled Max Risk'] = round(dict_results['Cumulative Return On Scaled Max Risk']/dict_results['Std Dev of Return on Max Risk'],3)
+
+            
 
         if self.debug:
             print("*****  BACKTEST RESULTS  ****")
@@ -156,6 +169,12 @@ class AbstractStrategy(ABC):
                 f"\n{'Sharpe Ratio with RF STD:':<35}{dict_results['Sharpe Ratio with RF STD']:>10}",
                 f"\n{'Risk Adj Cumulative Return:':<35}{dict_results['Risk Adj Cumulative Return']:>10}",
                 f"\n{'Dampened Risk Adj Cumulative Return:':<35}{dict_results['Dampened Risk Adj Cumulative Return']:>10}",
+                f"\n{'Mean Net Max Loss:':<35}{dict_results['Mean Net Max Loss']:>10}",
+                f"\n{'Max Net Max Loss:':<35}{dict_results['Max Net Max Loss']:>10}",
+                f"\n{'Mean Return on Max Risk:':<35}{dict_results['Mean Return on Max Risk']:>10}",
+                f"\n{'Std Dev of Return on Max Risk:':<35}{dict_results['Std Dev of Return on Max Risk']:>10}",
+                f"\n{'Cumulative Return On Scaled Max Risk:':<35}{dict_results['Cumulative Return On Scaled Max Risk']:>10}",
+                f"\n{'Risk Adj Cumulative Return On Scaled Max Risk:':<35}{dict_results['Risk Adj Cumulative Return On Scaled Max Risk']:>10}",
                 f"\n"
             )
             
@@ -166,15 +185,20 @@ class AbstractStrategy(ABC):
         call_count = len(sc_cols)
         put_count = len(sp_cols)
         
-        max_loss = 0
+        max_losses = np.zeros(max(call_count, put_count))
         
-        for c in range(call_count):
-            max_loss =  max((row[lc_cols[c]] - row[sc_cols[c]]), max_loss)
+        for i in range(len(max_losses)):
+
+            # for index i, does the put column exist?
+            if f"strike_sp{i}" in sp_cols:
+                max_losses[i] = row[f"strike_sp{i}"] - row[f"strike_lp{i}"]
+                
+            if f"strike_sc{i}" in sc_cols:
+                max_losses[i] =  max((row[f"strike_lc{i}"] - row[f"strike_sc{i}"]), max_losses[i])
+                
+        
             
-        for p in range(put_count):
-            max_loss =  max((row[sp_cols[p]] - row[lp_cols[p]]), max_loss)
-            
-        return max_loss * 100
+        return sum(max_losses) * 100
 
                 
         
