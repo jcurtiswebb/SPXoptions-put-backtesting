@@ -107,7 +107,7 @@ class AbstractStrategy(ABC):
             # These are spreads we need to calculate: max loss, return on max risk, std deviation of return on max risk, and risk adjusted return on max risk
             df_trades['gross_max_loss'] = df_trades.apply(lambda row : self.get_max_loss(row, sc_cols, lc_cols, sp_cols, lp_cols), axis=1)
             df_trades['net_max_loss'] = df_trades['gross_max_loss'] - df_trades['collected']
-            df_trades['return_on_max_risk'] = df_trades['net'] / df_trades['max_loss']
+            df_trades['return_on_max_risk'] = df_trades['net'] / df_trades['net_max_loss']
             # TODO : can we remove this intermediate calculation and do it in a one-liner
             df_trades['scaled_return_on_max_risk'] = 1 + (df_trades['return_on_max_risk']*self.max_bet_scaling)
         
@@ -168,15 +168,20 @@ class AbstractStrategy(ABC):
                 f"\n{'Sharpe Ratio static STD:':<35}{dict_results['Sharpe Ratio static STD']:>10}",
                 f"\n{'Sharpe Ratio with RF STD:':<35}{dict_results['Sharpe Ratio with RF STD']:>10}",
                 f"\n{'Risk Adj Cumulative Return:':<35}{dict_results['Risk Adj Cumulative Return']:>10}",
-                f"\n{'Dampened Risk Adj Cumulative Return:':<35}{dict_results['Dampened Risk Adj Cumulative Return']:>10}",
-                f"\n{'Mean Net Max Loss:':<35}{dict_results['Mean Net Max Loss']:>10}",
-                f"\n{'Max Net Max Loss:':<35}{dict_results['Max Net Max Loss']:>10}",
-                f"\n{'Mean Return on Max Risk:':<35}{dict_results['Mean Return on Max Risk']:>10}",
-                f"\n{'Std Dev of Return on Max Risk:':<35}{dict_results['Std Dev of Return on Max Risk']:>10}",
-                f"\n{'Cumulative Return On Scaled Max Risk:':<35}{dict_results['Cumulative Return On Scaled Max Risk']:>10}",
-                f"\n{'Risk Adj Cumulative Return On Scaled Max Risk:':<35}{dict_results['Risk Adj Cumulative Return On Scaled Max Risk']:>10}",
-                f"\n"
+                f"\n{'Dampened Risk Adj Cumulative Return:':<35}{dict_results['Dampened Risk Adj Cumulative Return']:>10}"
             )
+            
+            if 'net_max_loss' in df_trades.columns:
+                print(
+                    f"\n{'Mean Net Max Loss:':<35}{dict_results['Mean Net Max Loss']:>10}",
+                    f"\n{'Max Net Max Loss:':<35}{dict_results['Max Net Max Loss']:>10}",
+                    f"\n{'Mean Return on Max Risk:':<35}{dict_results['Mean Return on Max Risk']:>10}",
+                    f"\n{'Std Dev of Return on Max Risk:':<35}{dict_results['Std Dev of Return on Max Risk']:>10}",
+                    f"\n{'Cumulative Return On Scaled Max Risk:':<35}{dict_results['Cumulative Return On Scaled Max Risk']:>10}",
+                    f"\n{'Risk Adj Cumulative Return On Scaled Max Risk:':<35}{dict_results['Risk Adj Cumulative Return On Scaled Max Risk']:>10}"
+                )
+                
+            print("\n")
             
         #
         return dict_results
