@@ -1,4 +1,7 @@
 # %% [code]
+# %% [code]
+# %% [code]
+# %% [code]
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 from abc import ABC, abstractmethod
@@ -47,6 +50,7 @@ class AbstractStrategy(ABC):
         df_ty['daily_risk_free_return'] = (df_ty['Adj Close'] / 252) / 100
         df_ty.drop(['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume'], axis=1, inplace=True, errors='ignore')
 
+        df_trades.drop(['daily_risk_free_return'],axis=1,inplace=True, errors='ignore')
         df_trades = pd.merge(df_trades, df_ty, left_on='trade_date', right_on='Date')
         df_trades.drop(['Date'],axis=1,inplace=True)
 
@@ -87,40 +91,93 @@ class AbstractStrategy(ABC):
         loss_count = df_trades[df_trades['net']<0].shape[0]
         std_trans_return = df_trades['transaction_return'].std()
         std_trans_return_less_rf = (df_trades['transaction_return'] - df_trades['daily_risk_free_return']).std()
+        
+        put_balance=0
+        call_balance=0
+        sc_cols = [col for col in df_trades.columns.to_list() if 'strike_sc' in col]
+        lc_cols = [col for col in df_trades.columns.to_list() if 'strike_lc' in col]
+        sp_cols = [col for col in df_trades.columns.to_list() if 'strike_sp' in col]
+        lp_cols = [col for col in df_trades.columns.to_list() if 'strike_lp' in col]
+
+        for col in df_trades.columns:
+            df_trades['short_long_balance_call'] = df_trades[lc_cols].gt(0).sum(axis=1) - df_trades[sc_cols].gt(0).sum(axis=1)
+            df_trades['short_long_balance_put'] = df_trades[lp_cols].gt(0).sum(axis=1) - df_trades[sp_cols].gt(0).sum(axis=1)
+            
+        if (df_trades['short_long_balance_call'] == 0).all() and (df_trades['short_long_balance_put'] == 0).all():
+            # These are spreads we need to calculate: max loss, net gain per max loss, std deviation of net gain per max loss, and risk adjusted net gain per max loss
+            df_trades['max_loss'] = df_trades.apply(lambda row : self.get_max_loss(row, sc_cols, lc_cols, sp_cols, lp_cols), axis=1)
+            df_trades['return_on_max_risk'] = df_trades['net'] / df['max_loss']
+        
         self.df_trades = df_trades
+        dict_results = {'Cumulative return':round(df_trades['cum_return'].iloc[-1]*100,3),
+                        'Max Drawdown':round(df_trades['cum_return'].min()*100,3),
+                        'Trading Days':trade_count,
+                        'Wins':win_count,
+                        'Losses':loss_count,
+                        'Breakeven':df_trades[df_trades['net']==0.0].shape[0],
+                        'Win/Loss Ratio':round(win_count/trade_count*100,3),
+                        'Mean Win':round(df_trades[df_trades['net']>0]['net'].mean(),3),
+                        'Mean Win Trans Return':round(df_trades[df_trades['transaction_return']>0]['transaction_return'].mean()*100,3),
+                        'Mean Loss':round(df_trades[df_trades['net']<0]['net'].mean(),3),
+                        'Mean Loss Trans Return':round(df_trades[df_trades['transaction_return']<0]['transaction_return'].mean()*100,3),
+                        'Mean Net Trans':round(df_trades['net'].mean(),3),
+                        'Mean Trans Return':round(df_trades['transaction_return'].mean()*100,3),
+                        'Std Dev of Net Trans':round(df_trades['net'].std(),3),
+                        'Std Dev of Trans Return':round(df_trades['transaction_return'].std(),3),
+                        'Max Loss':round(df_trades['net'].min(),3),
+                        'Max Win':round(df_trades['net'].max(),3),
+                        'Sharpe Ratio static STD':round(np.sqrt(252)*(df_trades['transaction_return'].mean()-df_trades['daily_risk_free_return'].mean())/std_trans_return,3),
+                        'Sharpe Ratio with RF STD':round(np.sqrt(252)*(df_trades['transaction_return'].mean()-df_trades['daily_risk_free_return'].mean())/std_trans_return_less_rf,3),
+                        'Risk Adj Cumulative Return':round(df_trades['cum_return'].iloc[-1]*100/std_trans_return,3),
+                        'Dampened Risk Adj Cumulative Return':round(df_trades['cum_return'].iloc[-1]*100/np.sqrt(std_trans_return),3)
+                       }
+
         if self.debug:
             print("*****  BACKTEST RESULTS  ****")
             print(
-                f"\n{'Cumulative return:':<35}{round(df_trades['cum_return'].iloc[-1]*100,3):>10} %",
-                f"\n{'Max Drawdown:':<35}{round(df_trades['cum_return'].min()*100,3):>10} %",
-                f"\n{'Trading Days:':<35}{trade_count:>10}",
-                f"\n{'Wins:':<35}{win_count:>10}",
-                f"\n{'Losses:':<35}{loss_count:>10}",
-                f"\n{'Breakeven:':<35}{df_trades[df_trades['net']==0.0].shape[0]:>10}",
-                f"\n{'Win/Loss Ratio:':<35}{round(win_count/trade_count*100,3):>10} %",
-                f"\n{'Mean Win:':<35}{round(df_trades[df_trades['net']>0]['net'].mean(),3):>10} $",
-                f"\n{'Mean Win Trans Return:':<35}{round(df_trades[df_trades['transaction_return']>0]['transaction_return'].mean()*100,3):>10} %",
-                f"\n{'Mean Loss:':<35}{round(df_trades[df_trades['net']<0]['net'].mean(),3):>10} $",
-                f"\n{'Mean Loss Trans Return:':<35}{round(df_trades[df_trades['transaction_return']<0]['transaction_return'].mean()*100,3):>10} %",
-                f"\n{'Mean Net Trans:':<35}{round(df_trades['net'].mean(),3):>10} $",
-                f"\n{'Mean Trans Return:':<35}{round(df_trades['transaction_return'].mean()*100,3):>10} %",
-                f"\n{'Std Dev of Net Trans:':<35}{round(df_trades['net'].std(),3):>10}",
-                f"\n{'Std Dev of Trans Return:':<35}{round(df_trades['transaction_return'].std(),3):>10}",
-                f"\n{'Max Loss:':<35}{round(df_trades['net'].min(),3):>10} $",
-                f"\n{'Max Win:':<35}{round(df_trades['net'].max(),3):>10} $",
-                f"\n{'Sharpe Ratio static STD:':<35}{round(np.sqrt(252)*(df_trades['transaction_return'].mean()-df_trades['daily_risk_free_return'].mean())/std_trans_return,3):>10}",
-                f"\n{'Sharpe Ratio with RF STD:':<35}{round(np.sqrt(252)*(df_trades['transaction_return'].mean()-df_trades['daily_risk_free_return'].mean())/std_trans_return_less_rf,3):>10}",
-                f"\n{'Risk Adj Cumulative Return:':<35}{round(df_trades['cum_return'].iloc[-1]*100/std_trans_return,3):>10}",
-                f"\n{'Dampened Risk Adj Cumulative Return:':<35}{round(df_trades['cum_return'].iloc[-1]*100/np.sqrt(std_trans_return),3):>10}",
+                f"\n{'Cumulative return:':<35}{dict_results['Cumulative return']:>10} %",
+                f"\n{'Max Drawdown:':<35}{dict_results['Max Drawdown']:>10} %",
+                f"\n{'Trading Days:':<35}{dict_results['Trading Days']:>10}",
+                f"\n{'Wins:':<35}{dict_results['Wins']:>10}",
+                f"\n{'Losses:':<35}{dict_results['Losses']:>10}",
+                f"\n{'Breakeven:':<35}{dict_results['Breakeven']:>10}",
+                f"\n{'Win/Loss Ratio:':<35}{dict_results['Win/Loss Ratio']:>10} %",
+                f"\n{'Mean Win:':<35}{dict_results['Mean Win']:>10} $",
+                f"\n{'Mean Win Trans Return:':<35}{dict_results['Mean Win Trans Return']:>10} %",
+                f"\n{'Mean Loss:':<35}{dict_results['Mean Loss']:>10} $",
+                f"\n{'Mean Loss Trans Return:':<35}{dict_results['Mean Loss Trans Return']:>10} %",
+                f"\n{'Mean Net Trans:':<35}{dict_results['Mean Net Trans']:>10} $",
+                f"\n{'Mean Trans Return:':<35}{dict_results['Mean Trans Return']:>10} %",
+                f"\n{'Std Dev of Net Trans:':<35}{dict_results['Std Dev of Net Trans']:>10}",
+                f"\n{'Std Dev of Trans Return:':<35}{dict_results['Std Dev of Trans Return']:>10}",
+                f"\n{'Max Loss:':<35}{dict_results['Max Loss']:>10} $",
+                f"\n{'Max Win:':<35}{dict_results['Max Win']:>10} $",
+                f"\n{'Sharpe Ratio static STD:':<35}{dict_results['Sharpe Ratio static STD']:>10}",
+                f"\n{'Sharpe Ratio with RF STD:':<35}{dict_results['Sharpe Ratio with RF STD']:>10}",
+                f"\n{'Risk Adj Cumulative Return:':<35}{dict_results['Risk Adj Cumulative Return']:>10}",
+                f"\n{'Dampened Risk Adj Cumulative Return:':<35}{dict_results['Dampened Risk Adj Cumulative Return']:>10}",
                 f"\n"
             )
             
-        # The reason this number outputs like this, is because we were running a optimizer,
-        # and we wanted a single "fitness" value that the optimizer could optimize
-        # TODO : if Debug = True, output a dictionary with all of the values above
-        risk_adj_cum_return = round(df_trades['cum_return'].iloc[-1]*100/std_trans_return,3)
-        damp_risk_adj_cum_return = round(df_trades['cum_return'].iloc[-1]*100/np.sqrt(std_trans_return),3)
-        return damp_risk_adj_cum_return
+        #
+        return dict_results
+    
+    def get_max_loss(self, row, sc_cols, lc_cols, sp_cols, lp_cols):
+        call_count = len(sc_cols)
+        put_count = len(sp_cols)
+        
+        max_loss = 0
+        
+        for c in range(call_count):
+            max_loss =  max((row[sc_cols[c]] - row[lc_cols[c]]), max_loss)
+            
+        for p in range(put_count):
+            max_loss =  max((row[sp_cols[p]] - row[lp_cols[p]]), max_loss)
+            
+        return max_loss * 100
+
+                
+        
         
     def net2pct(self,x):
         return (x / self.initial_portfolio_value)*100
