@@ -41,6 +41,7 @@ class AbstractStrategy(ABC):
         df_closing = df[(df['quote_date'].isin(exp_dates))&(df['quote_time']=='16:00:00')].groupby(['quote_date'])['price'].mean()
         
         df_trades = self.df_trades
+        df_trades.drop(columns=['price'], inplace=True, errors='ignore')
         df_trades = df_trades.merge(df_closing.to_frame(), left_on=['expiration'], right_index=True)
         df_trades['commission'] = df_trades['trade_count']*self.commission
         df_trades['lost'] = df_trades['lost_c'] + df_trades['lost_p']
