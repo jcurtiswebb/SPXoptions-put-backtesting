@@ -109,7 +109,7 @@ class AbstractStrategy(ABC):
             df_trades['net_max_loss'] = df_trades['gross_max_loss'] - df_trades['collected']
             df_trades['return_on_max_risk'] = df_trades['net'] / df_trades['net_max_loss']
             # TODO : can we remove this intermediate calculation and do it in a one-liner
-            df_trades['scaled_return_on_max_risk'] = 1 + (df_trades['return_on_max_risk']*self.max_bet_scaling)
+            df_trades['scaled_return_on_max_risk'] = df_trades['return_on_max_risk']*self.max_bet_scaling + 1
         
         self.df_trades = df_trades
         dict_results = {'Cumulative return':round(df_trades['cum_return'].iloc[-1]*100,3),
@@ -195,11 +195,11 @@ class AbstractStrategy(ABC):
         for i in range(len(max_losses)):
 
             # for index i, does the put column exist?
-            if f"strike_sp{i}" in sp_cols:
-                max_losses[i] = row[f"strike_sp{i}"] - row[f"strike_lp{i}"]
+            if f"strike_sp_{i}" in sp_cols:
+                max_losses[i] = row[f"strike_sp_{i}"] - row[f"strike_lp_{i}"]
                 
-            if f"strike_sc{i}" in sc_cols:
-                max_losses[i] =  max((row[f"strike_lc{i}"] - row[f"strike_sc{i}"]), max_losses[i])
+            if f"strike_sc_{i}" in sc_cols:
+                max_losses[i] =  max((row[f"strike_lc_{i}"] - row[f"strike_sc_{i}"]), max_losses[i])
                 
         
             
