@@ -117,31 +117,57 @@ class AbstractStrategy(ABC):
         # We have two types of charts; naked option charts and spread charts.
         # Lets determine what set of charts to show here:
         if 'net_max_loss' in df_trades.columns:
-            print('uncomment me in spx_strategies')
-#             # Let's show spread charts
-#             fig, ax = plt.subplots(1, 3)
-            
-#             df_trade_plot = df_trades.copy()
-#             df_trade_plot.set_index('expiration', inplace=True)
-#             df_trade_plot = df_trade_plot['scaled_return_on_max_risk'].cumprod()
-            
-#             df_trade_plot.plot(ax=ax[0])
-#             plt.title("\n".join(wrap(str(self),50)))
-#             plt.grid()
-#             plt.savefig(f"{str(self)}.png")
-#             if self.debug == False:
-#                 plt.close(fig)
-                
-#             df_trades_transaction_return = df_trades.copy()
-#             df_trades_transaction_return['return_on_max_risk'] *= 100 
-#             df_trades_transaction_return.set_index('expiration', inplace=True)
-#             ax1 = df_trades_transaction_return['return_on_max_risk'].plot(ax=ax[1],linestyle='None', marker="o")
-#             ax1.set_ylabel('Return on Max Risk %')
-#             plt.title("\n".join(wrap(str(self),50)))
-#             plt.grid()
-#             plt.savefig(f"daily_ret_{str(self)}.png")
-#             if self.debug == False:
-#                 plt.close(fig)
+            plt.style.use(plt.style.available[15])
+
+            fig = plt.figure(figsize=(16,9))
+
+            gs = fig.add_gridspec(2,2)
+            ax1 = fig.add_subplot(gs[0, 0])
+            ax2 = fig.add_subplot(gs[0, 1])
+            ax3 = fig.add_subplot(gs[1, :])
+
+            fig.subplots_adjust(top=0.9)
+            plt.subplots_adjust(hspace=0.5)
+            fig.suptitle("\n".join(wrap(str(strat),100)),fontweight=0.5,fontsize=20)
+
+            df_trade_plot = df_trades.copy()
+            df_trade_plot.set_index('expiration', inplace=True)
+            df_trade_plot = df_trade_plot['scaled_return_on_max_risk'].cumprod()
+            df_trade_plot.plot(ax=ax1)
+            ax1.set_title("Scaled Return on Max Risk")
+
+
+            df_trades_transaction_return = df_trades.copy()
+            df_trades_transaction_return['return_on_max_risk'] *= 100 
+            df_trades_transaction_return.set_index('expiration', inplace=True)
+            df_trades_transaction_return['return_on_max_risk'].plot(ax=ax2,linestyle='None', marker="o")
+            ax2.set_title("Return on Max Risk (%)")
+
+            sc_cols = [col for col in df_trades.columns.to_list() if 'strike_sc' in col]
+            lc_cols = [col for col in df_trades.columns.to_list() if 'strike_lc' in col]
+            sp_cols = [col for col in df_trades.columns.to_list() if 'strike_sp' in col]
+            lp_cols = [col for col in df_trades.columns.to_list() if 'strike_lp' in col]
+            strike_cols = sc_cols + lc_cols + sp_cols + lp_cols
+            # strike_cols.append('price')
+            df_trades_strike_plot = df_trades.copy()
+            df_trades_strike_plot.set_index('expiration', inplace=True)
+            df_trades_strike_plot = df_trades_strike_plot.loc[:,strike_cols]
+            df_trades_strike_plot.plot(ax=ax3, linestyle='None')
+            num_calls = len(sc_cols)
+            num_puts = len(sp_cols)
+            for i in range(num_calls):
+                ax3.fill_between(df_trades_strike_plot.index.to_list(),df_trades_strike_plot[sc_cols[i]], df_trades_strike_plot[lc_cols[i]], 
+                                 where=(df_trades_strike_plot[lc_cols[i]] > df_trades_strike_plot[sc_cols[i]]),alpha=0.15, color='green')
+
+            for i in range(num_puts):
+                ax3.fill_between(df_trades_strike_plot.index.to_list(),df_trades_strike_plot[sp_cols[i]], df_trades_strike_plot[lp_cols[i]], 
+                                 where=(df_trades_strike_plot[lp_cols[i]] < df_trades_strike_plot[sp_cols[i]]),alpha=0.15, color='green')
+
+            df_trades_strike_plot = df_trades.copy()
+            df_trades_strike_plot.set_index('expiration', inplace=True)
+            df_trades_strike_plot = df_trades_strike_plot.loc[:,['price']]
+            df_trades_strike_plot.plot(ax=ax3)
+            ax3.set_title('Spread Region')
             
         else:
             # if you want to scale the chart, you should do it here
@@ -377,6 +403,11 @@ class OptionSelectorStaticEntryPolicy(AbstractStaticEntryPolicy):
         df_trades = df_dates[['quote_date','expiration']].copy()
         df_trades.rename({'quote_date': 'trade_date'}, axis='columns', inplace=True)
         df_trades['trade_count'] = 0
+        
+        exp_dates = df_dates['expiration'].unique()
+        df_closing = df[(df['expiration'].isin(exp_dates))&(df['quote_time']=='16:00:00')].groupby(['quote_date'])['price'].mean()
+        df_trades = df_trades.merge(df_closing.to_frame(), left_on=['expiration'], right_index=True)
+        
         df_data = df[(df['quote_time'] == self.trade_time) & (df['dte']==self.dte)]
         
         return self.option_selector.populateTrades(df_data, df_trades, self.get_contract_strike)
