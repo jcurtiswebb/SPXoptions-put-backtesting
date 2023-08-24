@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 from textwrap import wrap
 from time import perf_counter
 from datetime import datetime, timedelta, time
+from matplotlib.lines import Line2D
+import matplotlib.patches as mpatches
 
 
 
@@ -169,7 +171,7 @@ class AbstractStrategy(ABC):
                 num_puts = len(sp_cols)
                 for i in range(num_calls):
                     ax3.fill_between(df_trades_strike_plot.index.to_list(),df_trades_strike_plot[sc_cols[i]], df_trades_strike_plot[lc_cols[i]], 
-                                     where=(df_trades_strike_plot[lc_cols[i]] > df_trades_strike_plot[sc_cols[i]]),alpha=0.15, color='green')
+                                     where=(df_trades_strike_plot[lc_cols[i]] > df_trades_strike_plot[sc_cols[i]]),alpha=0.15, color='blue')
 
                 for i in range(num_puts):
                     ax3.fill_between(df_trades_strike_plot.index.to_list(),df_trades_strike_plot[sp_cols[i]], df_trades_strike_plot[lp_cols[i]], 
@@ -179,8 +181,16 @@ class AbstractStrategy(ABC):
                 df_trades_strike_plot.set_index('expiration', inplace=True)
                 df_trades_strike_plot = df_trades_strike_plot.loc[:,['price']]
                 df_trades_strike_plot.plot(ax=ax3)
+                
+                # create manual symbols for legend
+                call_patch = mpatches.Patch(color='blue', label='call spread (credit)')
+                put_patch = mpatches.Patch(color='green', label='put spread (credit)')  
+                spx_line = Line2D([0], [0], label='SPX close', color='orange')
+                manual_legend = [call_patch, put_patch, spx_line]
+                
+                plt.legend(handles=manual_legend)
                 ax3.set_title('Spread Region')
-
+                
             else:
                 # if you want to scale the chart, you should do it here
                 df_trade_plot = df_trades.copy()
