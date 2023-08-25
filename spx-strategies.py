@@ -3,6 +3,7 @@
 # %% [code]
 # %% [code]
 # %% [code]
+# %% [code]
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 from abc import ABC, abstractmethod
@@ -45,6 +46,9 @@ class AbstractStrategy(ABC):
         df_trades = self.df_trades
         df_trades.drop(columns=['price'], inplace=True, errors='ignore')
         df_trades = df_trades.merge(df_closing.to_frame(), left_on=['expiration'], right_index=True)
+        
+        #prior to commission calculation, we reduce # trade_count by number of no-trades
+        
         df_trades['commission'] = df_trades['trade_count']*self.commission
         df_trades['lost'] = df_trades['lost_c'] + df_trades['lost_p']
         df_trades['net'] = df_trades['collected'] - df_trades['lost'] - df_trades['commission']
@@ -91,6 +95,7 @@ class AbstractStrategy(ABC):
             df_trades['gross_max_loss'] = df_trades.apply(lambda row : self.get_max_loss(row, sc_cols, lc_cols, sp_cols, lp_cols), axis=1)
             df_trades['net_max_loss'] = df_trades['gross_max_loss'] - df_trades['collected']
             df_trades['return_on_max_risk'] = df_trades['net'] / df_trades['net_max_loss']
+            df_trades['return_on_max_risk'] = df_trades['return_on_max_risk'].fillna(0)
             # TODO : can we remove this intermediate calculation and do it in a one-liner
             df_trades['scaled_return_on_max_risk'] = df_trades['return_on_max_risk']*self.max_bet_scaling + 1
         
@@ -259,7 +264,12 @@ class AbstractStrategy(ABC):
                 
             print("\n")
             
-        #
+        # TODO : Find best spot for df_trades ordering. Maybe during option selection?
+        all_nonstrike_cols = [col for col in df_trades.columns.to_list() if 'strike_' not in col]
+        strike_cols = [col for col in df_trades.columns.to_list() if 'strike_' in col]
+        all_cols = all_nonstrike_cols[:3] + strike_cols + all_nonstrike_cols[3:]
+        df_trades = df_trades[all_cols]
+        
         return dict_results
     
     def get_max_loss(self, row, sc_cols, lc_cols, sp_cols, lp_cols):
@@ -557,6 +567,17 @@ class DeltaOptionSelector(AbstractOptionSelector):
 
         filt_cols = [col for col in df_trades.columns.to_list() if "strike_" in col]
         df_trades['trade_count'] = df_trades.loc[:,filt_cols].astype(bool).sum(axis=1)
+        
+        #TODO : Simplify above code because we no longer accept arrays of deltas
+        cols = df_trades.columns
+        if 'strike_sp_0' in cols and 'strike_lp_0' in cols:
+            df_trades.loc[df_trades['strike_sp_0'] == df_trades['strike_lp_0'],'trade_count'] -=2
+            df_trades.loc[df_trades['strike_sp_0'] == df_trades['strike_lp_0'],['collected_sp_0','collected_lp_0']] = 0
+
+
+        if 'strike_sc_0' in cols and 'strike_lc_0' in cols:
+            df_trades.loc[df_trades['strike_sc_0'] == df_trades['strike_lc_0'],'trade_count'] -=2
+            df_trades.loc[df_trades['strike_sc_0'] == df_trades['strike_lc_0'],['collected_sc_0','collected_lc_0']] = 0
         
         filt_cols = [col for col in df_trades.columns.to_list() if "collected_" in col]
         df_trades['collected'] = df_trades.loc[:,filt_cols].sum(axis=1)
