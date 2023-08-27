@@ -4,6 +4,7 @@
 # %% [code]
 # %% [code]
 # %% [code]
+# %% [code]
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 from abc import ABC, abstractmethod
@@ -150,7 +151,7 @@ class AbstractStrategy(ABC):
 
                 df_trade_plot = df_trades.copy()
                 df_trade_plot.set_index('expiration', inplace=True)
-                df_trade_plot = (1 - df_trade_plot['scaled_return_on_max_risk'].cumprod())*100
+                df_trade_plot = df_trade_plot['scaled_return_on_max_risk'].cumprod()*100
                 df_trade_plot.plot(ax=ax1)
                 ax1.set_title("Scaled Return (Risking 2% of Portfolio Each Day)")
                 ax1.set_ylabel('% Return')
