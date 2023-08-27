@@ -151,7 +151,7 @@ class AbstractStrategy(ABC):
 
                 df_trade_plot = df_trades.copy()
                 df_trade_plot.set_index('expiration', inplace=True)
-                df_trade_plot = df_trade_plot['scaled_return_on_max_risk'].cumprod()*100
+                df_trade_plot = df_trade_plot['scaled_return_on_max_risk'].cumprod()
                 df_trade_plot.plot(ax=ax1)
                 ax1.set_title("Scaled Return (Risking 2% of Portfolio Each Day)")
                 ax1.set_ylabel('% Return')
