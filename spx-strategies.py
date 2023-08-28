@@ -229,7 +229,7 @@ class AbstractStrategy(ABC):
         if self.debug:
             print("*****  BACKTEST RESULTS  ****")
             for key, value in dict_results.items():
-                f"\n{key:<45}{value:>10}"
+                print(f"\n{key:<45}{value:>10}")
             print("\n")
             
         # TODO : Find best spot for df_trades ordering. Maybe during option selection?
