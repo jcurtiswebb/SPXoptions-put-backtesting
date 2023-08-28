@@ -118,9 +118,9 @@ class AbstractStrategy(ABC):
             
 
         # these entries are the same regardless of scenario
-        dict_results['Trading Days'] = trade_count,
-        dict_results['Wins'] = win_count,
-        dict_results['Losses'] = loss_count,
+        dict_results['Trading Days'] = trade_count
+        dict_results['Wins'] = win_count
+        dict_results['Losses'] = loss_count
         dict_results['Breakeven'] = df_trades[df_trades['net']==0.0].shape[0]
         dict_results['Win/Loss Ratio'] = round(win_count/trade_count*100,3)
         dict_results['Mean Win'] = round(df_trades[df_trades['net']>0]['net'].mean(),3)
@@ -229,7 +229,7 @@ class AbstractStrategy(ABC):
         if self.debug:
             print("*****  BACKTEST RESULTS  ****")
             for key, value in dict_results.items():
-                print(f"\n{key:<45}{value:>10}")
+                print(f"{key:<45}{value:>10}")
             print("\n")
             
         # TODO : Find best spot for df_trades ordering. Maybe during option selection?
