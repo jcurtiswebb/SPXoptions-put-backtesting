@@ -15,6 +15,15 @@ import matplotlib.patches as mpatches
 ########
 spx_strat_v = 0
 
+def study_name_reducer(i_name):
+    i_name = i_name.replace("Delta","D")
+    i_name = i_name.replace("Option","O")
+    i_name = i_name.replace("Selector","S")
+    i_name = i_name.replace("Static", "S")
+    i_name = i_name.replace("Policy", "P")
+    i_name = i_name.replace("HoldToExp","HTE")
+    return i_name
+
 
 #########
 # Abstract Strategy & Abstract Policy
