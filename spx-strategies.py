@@ -1,3 +1,4 @@
+# %% [code]
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 from abc import ABC, abstractmethod
@@ -950,9 +951,9 @@ class AbstractStaticExitPolicy(AbstractExitPolicy):
     
 
 class HoldToExpStaticExitPolicy(AbstractStaticExitPolicy):
-    def __init__(self, trade_time):
+    def __init__(self):
         self.summary = f"Hold Until Expiration"
-        super().__init__(trade_time)
+        super().__init__('16:00:00')
     
     def __str__(self):
         return self.summary
@@ -967,9 +968,9 @@ class HoldToExpStaticExitPolicy(AbstractStaticExitPolicy):
         return df_trades
     
 class ExitAtTimeStaticExitPolicy(AbstractStaticExitPolicy):
-    def __init__(self, commission, trade_time):
+    def __init__(self, trade_time):
         self.summary = f"Exit position at {trade_time}"
-        super().__init__(commission, trade_time)
+        super().__init__(trade_time)
     
     def __str__(self):
         return self.summary
