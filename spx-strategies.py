@@ -10,6 +10,10 @@ from datetime import datetime, timedelta, time
 from matplotlib.lines import Line2D
 import matplotlib.patches as mpatches
 
+########
+# Version and helpers
+########
+version = 84
 
 
 #########
