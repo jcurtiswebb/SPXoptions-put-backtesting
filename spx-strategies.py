@@ -13,7 +13,7 @@ import matplotlib.patches as mpatches
 ########
 # Version and helpers
 ########
-version = 84
+version = 85
 
 
 #########
@@ -102,7 +102,7 @@ class AbstractStrategy(ABC):
         self.df_trades = df_trades
         dict_results = {}
         if 'net_max_loss' in df_trades.columns:
-            dict_results['Cumulative Return'] = round(df_trades['scaled_return_on_max_risk'].cumprod().iloc[-1],3)
+            dict_results['Cumulative Return'] = round(100 - 100*df_trades['scaled_return_on_max_risk'].cumprod().iloc[-1],3)
             dict_results['Max Drawdown'] = round(df_trades['cum_return'].min()*100,3)
             dict_results['Mean Net Max Loss'] = round(df_trades['net_max_loss'].mean(),3)
             dict_results['Max Net Max Loss'] = round(df_trades['net_max_loss'].max(),3)
