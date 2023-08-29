@@ -58,7 +58,7 @@ class AbstractStrategy(ABC):
         df_trades['transaction_return'] = df_trades['net'] / df_trades['portfolio_value'].shift(1)
         net = df_trades['net'].iloc[0]
         df_trades.loc[0,'transaction_return'] = df_trades['net'].iloc[0] / initial_portfolio_value
-        df_trades['cum_return'] = 1 + (df_trades['portfolio_value'] - initial_portfolio_value) / initial_portfolio_value
+        df_trades['cum_return'] = (df_trades['portfolio_value'] - initial_portfolio_value) / initial_portfolio_value
 
         df_ty = self.df_ty.copy()
         df_ty['daily_risk_free_return'] = (df_ty['Adj Close'] / 252) / 100
