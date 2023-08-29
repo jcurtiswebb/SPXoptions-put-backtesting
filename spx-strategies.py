@@ -13,7 +13,7 @@ import matplotlib.patches as mpatches
 ########
 # Version and helpers
 ########
-version = 85
+spx_strat_v = 0
 
 
 #########
