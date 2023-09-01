@@ -1,5 +1,6 @@
 # %% [code]
 # %% [code]
+# %% [code]
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 from abc import ABC, abstractmethod
@@ -251,7 +252,7 @@ class AbstractStrategy(ABC):
         all_nonstrike_cols = [col for col in df_trades.columns.to_list() if 'strike_' not in col]
         strike_cols = [col for col in df_trades.columns.to_list() if 'strike_' in col]
         all_cols = all_nonstrike_cols[:3] + strike_cols + all_nonstrike_cols[3:]
-        df_trades = df_trades[all_cols]
+        self.df_trades = df_trades[all_cols]
         
         return dict_results
     
