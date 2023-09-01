@@ -1,4 +1,4 @@
-# %% [code]
+ # %% [code]
 # %% [code]
 # %% [code]
 import numpy as np # linear algebra
@@ -24,6 +24,69 @@ def study_name_reducer(i_name):
     i_name = i_name.replace("Policy", "P")
     i_name = i_name.replace("HoldToExp","HTE")
     return i_name
+
+# The following code builds the fully described study, including entry and exit policy, data, trial search params, etc
+def get_study_name(op_sel, ent_pol_study, study_param_ranges, 
+                   configs_ent_pol, ex_pol_study, configs_ex_pol,
+                   configs_strat, configs, df_study, spx_strat_v,
+                   notebook_name, notebook_v
+                  ):
+    """
+    builds the fully described study as a string, including entry and exit policy, data, trial search params, etc
+
+    :param op_sel: The class of the option selector being used | None
+    :param ent_pol_study: The class of the entry policy being used | None
+    :param study_param_ranges: A dictionary of study parameters being used and their ranges as tuples | None
+    :param configs_ent_pol: A dictionary of parameters of the entry policy, not including those included in param ranges | None
+    :param ex_pol_study: The class of the exit policy being used | None
+    :param configs_ex_pol: A dictionary of parameters of the exit policy, not including those included in param ranges | None
+    :param configs_strat: A dictionary of parameters of the strategy, not including those included in param ranges | None
+    :param configs: A dictionary of parameters of other configuration items, not including those included in param ranges | None
+    :param df_study: the dataframe used for the study
+    :param spx_strat_v: The version of spx_strategies
+    :param notebook_name: The name of the calling notebook
+    :param notebook_v: The version of the calling notebook
+    :return: study: string
+    """
+    study = ''
+    
+    study += op_sel.__name__ + '_' if op_sel is not None else ''
+    
+    study += ent_pol_study.__name__ + '_' if ent_pol_study is not None else ''
+    
+
+    if study_param_ranges is not None:
+        # concatenate ranges first
+        for k,v in study_param_ranges.items():
+            study+="_"+k+"_"+str(v[0])+"_"+str(v[1])
+
+    if configs_ent_pol is not None:
+        # concatenate static values second
+        for k,v in configs_ent_pol.items():
+            study += f"_{k}_{v}"
+
+    study += f"_{ex_pol_study.__name__}" if ex_pol_study is not None else ''
+
+    if configs_ex_pol is not None:
+        for k,v in configs_ex_pol.items():
+            study += f"_{k}_{v}"
+
+    if configs_strat is not None:
+        for k,v in configs_strat.items():
+            study += f"_{k}_{v}"
+        
+    if configs is not None:
+        for k,v in configs.items():
+            study += f"_{k}_{v}"
+
+    study += "_"+ df_study['quote_date'].min().date().strftime("%y%m%d") +'_' + df_study['quote_date'].max().date().strftime("%y%m%d")
+
+    study += "_spx_st_" + str(spx_strat_v)
+
+    study += "_" + notebook_name + "_" + str(notebook_v)
+
+    study = study_name_reducer(study)
+    return study
 
 
 #########
