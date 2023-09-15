@@ -176,7 +176,7 @@ class AbstractStrategy(ABC):
             df_trades['scaled_return_on_max_risk'] = df_trades['return_on_max_risk']*self.max_bet_scaling + 1
             
             self.df_trades_implausible = df_trades[df_trades['return_on_max_risk'] > 1.0].copy()
-            if self.remove_implausible_trades:
+            if self.remove_implausible_trades and self.df_trades_implausible.shape[0] > 0:
                 print(f"Dropping {self.df_trades_implausible.shape[0]} trades. They are listed in the df_trades_implausible dataframe of the strategy object.")
                 df_trades.drop(df_trades[df_trades['return_on_max_risk'] > 1.0].index, inplace=True)
             
