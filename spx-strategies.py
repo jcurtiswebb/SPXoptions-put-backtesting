@@ -1,3 +1,4 @@
+# %% [code]
  # %% [code]
 # %% [code]
 # %% [code]
@@ -103,6 +104,8 @@ class AbstractStrategy(ABC):
         self.debug = debug
         self.max_bet_scaling = 0.02
         self.df = None
+        self.df_trades_implausible = None
+        self.remove_implausible_trades = True
         
         # If another method overrode df_trades, we will respect it.
         if hasattr(self, 'df_trades') == False:
@@ -171,6 +174,13 @@ class AbstractStrategy(ABC):
             df_trades['return_on_max_risk'] = df_trades['return_on_max_risk'].fillna(0)
             # TODO : can we remove this intermediate calculation and do it in a one-liner
             df_trades['scaled_return_on_max_risk'] = df_trades['return_on_max_risk']*self.max_bet_scaling + 1
+            
+            self.df_trades_implausible = df_trades[df_trades['return_on_max_risk'] > 1.0].copy()
+            if self.remove_implausible_trades:
+                print(f"Dropping {self.df_trades_implausible.shape[0]} trades. They are listed in the df_trades_implausible dataframe of the strategy object.")
+                df_trades.drop(df_trades[df_trades['return_on_max_risk'] > 1.0].index, inplace=True)
+            
+            
         
         self.df_trades = df_trades
         dict_results = {}
