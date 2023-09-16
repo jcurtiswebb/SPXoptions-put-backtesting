@@ -59,7 +59,7 @@ def get_study_name(op_sel, ent_pol_study, study_param_ranges,
     if study_param_ranges is not None:
         # concatenate ranges first
         for k,v in study_param_ranges.items():
-            study+="_"+k+"_"+str(v[0])+"_"+str(v[1])
+            study+="_"+k+":"+str(v[0])+"_"+str(v[1])
 
     if configs_ent_pol is not None:
         # concatenate static values second
@@ -626,15 +626,16 @@ class DeltaOptionSelector(AbstractOptionSelector):
         df_trades['trade_count'] = df_trades.loc[:,filt_cols].astype(bool).sum(axis=1)
         
         #TODO : Simplify above code because we no longer accept arrays of deltas
+        #TODO : Create infeasibility function and refactor this and the other infeasible items from perform calcs into one function
         cols = df_trades.columns
         if 'strike_sp_0' in cols and 'strike_lp_0' in cols:
-            df_trades.loc[df_trades['strike_sp_0'] == df_trades['strike_lp_0'],'trade_count'] -=2
-            df_trades.loc[df_trades['strike_sp_0'] == df_trades['strike_lp_0'],['collected_sp_0','collected_lp_0']] = 0
+            df_trades.loc[(df_trades['strike_sp_0'] == df_trades['strike_lp_0'])|(df_trades['collected_sp_0'] <= abs(df_trades['collected_lp_0'])),'trade_count'] -=2
+            df_trades.loc[(df_trades['strike_sp_0'] == df_trades['strike_lp_0'])|(df_trades['collected_sp_0'] <= abs(df_trades['collected_lp_0'])),['collected_sp_0','collected_lp_0']] = 0
 
 
         if 'strike_sc_0' in cols and 'strike_lc_0' in cols:
-            df_trades.loc[df_trades['strike_sc_0'] == df_trades['strike_lc_0'],'trade_count'] -=2
-            df_trades.loc[df_trades['strike_sc_0'] == df_trades['strike_lc_0'],['collected_sc_0','collected_lc_0']] = 0
+            df_trades.loc[(df_trades['strike_sc_0'] == df_trades['strike_lc_0'])|(df_trades['collected_sc_0'] <= abs(df_trades['collected_lc_0'])),'trade_count'] -=2
+            df_trades.loc[(df_trades['strike_sc_0'] == df_trades['strike_lc_0'])|(df_trades['collected_sc_0'] <= abs(df_trades['collected_lc_0'])),['collected_sc_0','collected_lc_0']] = 0
         
         filt_cols = [col for col in df_trades.columns.to_list() if "collected_" in col]
         df_trades['collected'] = df_trades.loc[:,filt_cols].sum(axis=1)
