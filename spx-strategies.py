@@ -495,7 +495,12 @@ class OptionSelectorStaticEntryPolicy(AbstractStaticEntryPolicy):
         
         df_data = df[(df['quote_time'] == self.trade_time) & (df['dte']==self.dte)]
         
-        return self.option_selector.populateTrades(df_data, df_trades, self.get_contract_strike)
+        try:
+            df_trades = self.option_selector.populateTrades(df_data, df_trades, self.get_contract_strike)
+        except ValueError as ve:
+            print(f"Value error when populating trades for : {str(self)}. Were no trades found?")
+        
+        return df_trades
     
     def __str__(self):
         return str(self.option_selector)
