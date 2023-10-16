@@ -751,7 +751,7 @@ class DeltaAndOffsetOptionSelector(AbstractOptionSelector):
             df_lc = df_c[df_c['delta']<= self.short_calls[i]]
             df_lc = df_lc.loc[df_lc.groupby(['quote_date'])['delta'].nlargest(self.long_call_offsets[i]+1).reset_index().set_index('level_1').groupby('quote_date')['delta'].idxmin()]
             df_trades[f'strike_lc_{i}'],df_trades[f'delta_lc_{i}'],df_trades[f'collected_lc_{i}'] = df_trades.apply(
-                lambda row : get_contract_strike(row['trade_date'], row['expiration'],row[f'delta_lc_target_{i}'], df_lc, 'buy'), axis = 1).T.values
+                lambda row : get_contract_strike(row['trade_date'], row['expiration'],None, df_lc, 'buy'), axis = 1).T.values
             df_trades[f'collected_lc_{i}'] = df_trades[f'collected_lc_{i}']*-1
 
         # Add all long puts to df_trades
@@ -761,7 +761,7 @@ class DeltaAndOffsetOptionSelector(AbstractOptionSelector):
             df_lp = df_p[df_p['delta']<= self.short_puts[i]]
             df_lp = df_lp.loc[df_lp.groupby(['quote_date'])['delta'].nlargest(self.long_put_offsets[i]+1).reset_index().set_index('level_1').groupby('quote_date')['delta'].idxmin()]
             df_trades[f'strike_lp_{i}'],df_trades[f'delta_lp_{i}'],df_trades[f'collected_lp_{i}'] = df_trades.apply(
-                lambda row : get_contract_strike(row['trade_date'], row['expiration'],row[f'delta_lp_target_{i}'], df_lp, 'buy'), axis = 1).T.values
+                lambda row : get_contract_strike(row['trade_date'], row['expiration'],None, df_lp, 'buy'), axis = 1).T.values
             df_trades[f'collected_lp_{i}']=df_trades[f'collected_lp_{i}']*-1
 
         filt_cols = [col for col in df_trades.columns.to_list() if "strike_" in col]
