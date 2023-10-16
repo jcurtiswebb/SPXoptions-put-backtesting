@@ -653,6 +653,142 @@ class DeltaOptionSelector(AbstractOptionSelector):
     def __repr__(self):
         return self.summary
 
+class DeltaAndOffsetOptionSelector(AbstractOptionSelector):
+    def __init__(self, short_puts=None, short_calls=None, long_put_offsets=None, long_call_offsets=None):
+        """
+        Initializes the Delta Option Selector class. All params are target deltas
+        
+        :param short_puts: A float or list of deltas to open positions with
+        :param short_calls: None/float/list
+        :param long_put_offsets: int/list of ints specifying how many strikes away from the short put
+        :param long_call_offsets: int/list of ints specifying how many strikes away from the short call
+        :return: n/a
+        """
+        # Any of the input variables can be None, float, or a list of floats
+        # TODO : Add type checking for list
+        self.summary = "Delta "
+        
+        if (short_puts is not None and long_put_offsets is None) or (short_calls is not None and long_call_offsets is None):
+            raise ValueError('DeltaAndOffsetOptionSelector requires offsets for each short position.')
+        
+        
+        if short_puts is not None:
+            self.short_puts = [short_puts] if type(short_puts) is float else short_puts
+            for sp in self.short_puts:
+                self.summary += f"SP: {sp:.3f} "
+        else:
+            self.short_puts = []
+            
+        if short_calls is not None:
+            self.short_calls = [short_calls] if type(short_calls) is float else short_calls
+            for sc in self.short_calls:
+                self.summary += f"SC: {sc:.3f} "
+        else:
+            self.short_calls = []
+            
+        if long_put_offsets is not None:
+            self.long_put_offsets = [long_put_offsets] if type(long_put_offsets) is int else long_put_offsets
+            for lp in self.long_put_offsets:
+                self.summary += f"LP-OS: {lp} "
+        else:
+            self.long_put_offsets = []
+            
+        if long_call_offsets is not None:
+            self.long_call_offsets = [long_call_offsets] if type(long_call_offsets) is int else long_call_offsets
+            for lc in self.long_call_offsets:
+                self.summary += f"LC-OS: {lc} "
+        else:
+            self.long_call_offsets = []
+            
+        
+
+        
+    def populateTrades(self, df_data, df_trades, get_contract_strike):
+        """
+        Populates trades for the classes deltas 0 to n trades per day
+        
+        :param df_data: must be filtered for the proper date and time of trade entry
+        :param df_trades: must contain rows pertaining to the trade dates
+        :param get_contract_strike: method for obtaining the strike, data
+        :return: df_trades with added columns for 
+        """
+        if df_trades.shape[0] == 0:
+            print("***WARNING*** : No rows were configured in df_trades. No backtest can be generated.")
+            
+        df_c = df_data[(df_data['type']=="C")].copy()
+        df_p = df_data[(df_data['type']=="P")].copy()
+        
+        if df_c.shape[0] == 0:
+            print("***WARNING*** : No calls were found with static rules.")
+            
+        if df_p.shape[0] == 0:
+            print("***WARNING*** : No puts were found with static rules.")
+            
+        if df_trades.shape[0]==0:
+            print("***WARNING*** : No trades are possible during the time frame in the data provided.")
+        
+            
+        # Add all short puts to df_trades
+        for i in range(len(self.short_puts)):
+            df_trades[f'delta_sp_target_{i}'] = self.short_puts[i]
+            df_sp = df_p[df_p['delta']<= self.short_puts[i]]
+            df_sp = df_sp.loc[df_sp.groupby(['quote_date'])[['delta']].idxmax()['delta']]
+            df_trades[f'strike_sp_{i}'],df_trades[f'delta_sp_{i}'],df_trades[f'collected_sp_{i}'] = df_trades.apply(
+                lambda row : get_contract_strike(row['trade_date'], row['expiration'],row[f'delta_sp_target_{i}'], df_sp,'sell'), axis = 1).T.values
+        
+        # Add all short calls to df_trades
+        for i in range(len(self.short_calls)):
+            df_trades[f'delta_sc_target_{i}'] = self.short_calls[i]
+            df_sc = df_c[df_c['delta']<= self.short_calls[i]]
+            df_sc = df_sc.loc[df_sc.groupby(['quote_date'])[['delta']].idxmax()['delta']]
+            df_trades[f'strike_sc_{i}'],df_trades[f'delta_sc_{i}'],df_trades[f'collected_sc_{i}'] = df_trades.apply(
+                lambda row : get_contract_strike(row['trade_date'], row['expiration'],row[f'delta_sc_target_{i}'], df_sc,'sell'), axis = 1).T.values
+
+        # Add all long calls to df_trades
+        for i in range(len(self.long_call_offsets)):
+            df_trades[f'delta_lc_os_{i}'] = self.long_call_offsets[i]
+            # repeat the short call filter in order to count offsets
+            df_lc = df_c[df_c['delta']<= self.short_calls[i]]
+            df_lc = df_lc.loc[df_lc.groupby(['quote_date'])['delta'].nlargest(self.long_call_offsets[i]+1).idxmin()]
+            df_trades[f'strike_lc_{i}'],df_trades[f'delta_lc_{i}'],df_trades[f'collected_lc_{i}'] = df_trades.apply(
+                lambda row : get_contract_strike(row['trade_date'], row['expiration'],row[f'delta_lc_target_{i}'], df_lc, 'buy'), axis = 1).T.values
+            df_trades[f'collected_lc_{i}'] = df_trades[f'collected_lc_{i}']*-1
+
+        # Add all long puts to df_trades
+        for i in range(len(self.long_put_offsets)):
+            df_trades[f'delta_lp_os_{i}'] = self.long_put_offsets[i]
+            # repeat the short put filter in order to count offsets
+            df_lp = df_p[df_p['delta']<= self.short_puts[i]]
+            df_lp = df_lp.loc[df_lp.groupby(['quote_date'])['delta'].nlargest(self.long_put_offsets[i]+1).idxmin()]
+            df_trades[f'strike_lp_{i}'],df_trades[f'delta_lp_{i}'],df_trades[f'collected_lp_{i}'] = df_trades.apply(
+                lambda row : get_contract_strike(row['trade_date'], row['expiration'],row[f'delta_lp_target_{i}'], df_lp, 'buy'), axis = 1).T.values
+            df_trades[f'collected_lp_{i}']=df_trades[f'collected_lp_{i}']*-1
+
+        filt_cols = [col for col in df_trades.columns.to_list() if "strike_" in col]
+        df_trades['trade_count'] = df_trades.loc[:,filt_cols].astype(bool).sum(axis=1)
+        
+        #TODO : Simplify above code because we no longer accept arrays of deltas
+        #TODO : Create infeasibility function and refactor this and the other infeasible items from perform calcs into one function
+        cols = df_trades.columns
+        if 'strike_sp_0' in cols and 'strike_lp_0' in cols:
+            df_trades.loc[(df_trades['strike_sp_0'] == df_trades['strike_lp_0'])|(df_trades['collected_sp_0'] <= abs(df_trades['collected_lp_0'])),'trade_count'] -=2
+            df_trades.loc[(df_trades['strike_sp_0'] == df_trades['strike_lp_0'])|(df_trades['collected_sp_0'] <= abs(df_trades['collected_lp_0'])),['collected_sp_0','collected_lp_0']] = 0
+
+
+        if 'strike_sc_0' in cols and 'strike_lc_0' in cols:
+            df_trades.loc[(df_trades['strike_sc_0'] == df_trades['strike_lc_0'])|(df_trades['collected_sc_0'] <= abs(df_trades['collected_lc_0'])),'trade_count'] -=2
+            df_trades.loc[(df_trades['strike_sc_0'] == df_trades['strike_lc_0'])|(df_trades['collected_sc_0'] <= abs(df_trades['collected_lc_0'])),['collected_sc_0','collected_lc_0']] = 0
+        
+        filt_cols = [col for col in df_trades.columns.to_list() if "collected_" in col]
+        df_trades['collected'] = df_trades.loc[:,filt_cols].sum(axis=1)
+            
+        return df_trades
+    
+    def __str__(self):
+        return self.summary
+
+    def __repr__(self):
+        return self.summary
     
 class YieldOptionSelector(AbstractOptionSelector):
     def __init__(self, short_puts=None, short_calls=None, long_puts=None, long_calls=None, ipv=None):
