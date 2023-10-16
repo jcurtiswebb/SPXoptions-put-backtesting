@@ -371,15 +371,21 @@ class AbstractStrategy(ABC):
     
 class AbstractPolicy(ABC):
     def getRoundedSlippedPrice(self,bid,ask, trans_type):
-        mid = (bid + ask)/0.02
-        if mid % 1 != 0.0:
-            # We need to slip the bid/ask spread
-            if trans_type == 'sell':
-                ask -= 0.05
-            elif trans_type=='buy':
-                bid += 0.05
+#         mid = (bid + ask)/0.02
+#         if mid % 1 != 0.0:
+#             # We need to slip the bid/ask spread
+#             if trans_type == 'sell':
+#                 ask -= 0.05
+#             elif trans_type=='buy':
+#                 bid += 0.05
 
-        mid = round((bid + ask)/0.02,1)
+#         mid = round((bid + ask)/0.02,1)
+
+        if trans_type == 'sell':
+            return bid
+        elif trans_type=='buy':
+            return ask
+        
         return mid
     
     def len_check(self,df, opt_type, strike, contract_date, quote_time):
