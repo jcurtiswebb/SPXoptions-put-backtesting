@@ -652,6 +652,7 @@ class DeltaOptionSelector(AbstractOptionSelector):
 
     def __repr__(self):
         return self.summary
+
     
 class YieldOptionSelector(AbstractOptionSelector):
     def __init__(self, short_puts=None, short_calls=None, long_puts=None, long_calls=None, ipv=None):
