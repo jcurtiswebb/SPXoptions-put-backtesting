@@ -172,8 +172,9 @@ class AbstractStrategy(ABC):
             df_trades['gross_max_loss'] = df_trades.apply(lambda row : self.get_max_loss(row, sc_cols, lc_cols, sp_cols, lp_cols), axis=1)
             df_trades['net_max_loss'] = df_trades['gross_max_loss'] - df_trades['collected']
             
-            if self.fix_implausible_trades:
-                df_trades.loc[(df_trades['net_max_loss']<=0)|(df_trades['gross_max_loss']>7*df_trades['net_max_loss']),'net_max_loss'] = df_trades['gross_max_loss']/7
+#             if self.fix_implausible_trades:
+                # TODO change collected instead of net_max_loss and recalculate
+#                 df_trades.loc[(df_trades['net_max_loss']<=0)|(df_trades['gross_max_loss']>7*df_trades['net_max_loss']),'net_max_loss'] = df_trades['gross_max_loss']/7
                 
              
             df_trades['return_on_max_risk'] = df_trades['net'] / df_trades['net_max_loss']
