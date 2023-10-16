@@ -382,9 +382,9 @@ class AbstractPolicy(ABC):
 #         mid = round((bid + ask)/0.02,1)
 
         if trans_type == 'sell':
-            return bid
+            return bid*100
         elif trans_type=='buy':
-            return ask
+            return ask*100
         
         return mid
     
