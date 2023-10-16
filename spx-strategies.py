@@ -414,7 +414,7 @@ class AbstractPolicy(ABC):
             return pd.Series([0,0,0])
         
         df1 = df1.iloc[0]
-        rounded_price = self.getRoundedSlippedPrice(df1['ask'],df1['bid'],trans_type)
+        rounded_price = self.getRoundedSlippedPrice(df1['bid'],df1['ask'],trans_type)
 
         
         return pd.Series([df1['strike'],df1['delta'],rounded_price])
