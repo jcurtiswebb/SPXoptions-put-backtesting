@@ -188,6 +188,7 @@ class AbstractStrategy(ABC):
                 print(f"Fixing {self.df_trades_unrealistic.shape[0]} trades. They are listed in the df_trades_unrealistic dataframe of the strategy object.")
                 
                 df_trades.loc[(df_trades['net_max_loss']<=0)|(df_trades['gross_max_loss']>10*df_trades['net_max_loss']),'collected'] = df_trades['collected'].median()
+                df_trades['net'] = df_trades['collected'] - df_trades['lost'] - df_trades['commission']
                 df_trades['return_on_max_risk'] = df_trades['net'] / df_trades['net_max_loss']
                 df_trades['return_on_max_risk'] = df_trades['return_on_max_risk'].fillna(0)
                 # TODO : can we remove this intermediate calculation and do it in a one-liner
