@@ -172,9 +172,6 @@ class AbstractStrategy(ABC):
             # These are spreads we need to calculate: max loss, return on max risk, std deviation of return on max risk, and risk adjusted return on max risk
             df_trades['gross_max_loss'] = df_trades.apply(lambda row : self.get_max_loss(row, sc_cols, lc_cols, sp_cols, lp_cols), axis=1)
             df_trades['net_max_loss'] = df_trades['gross_max_loss'] - df_trades['collected']
-            
-
-             
             df_trades['return_on_max_risk'] = df_trades['net'] / df_trades['net_max_loss']
             df_trades['return_on_max_risk'] = df_trades['return_on_max_risk'].fillna(0)
             # TODO : can we remove this intermediate calculation and do it in a one-liner
@@ -189,6 +186,7 @@ class AbstractStrategy(ABC):
                 
                 df_trades.loc[(df_trades['net_max_loss']<=0)|(df_trades['gross_max_loss']>10*df_trades['net_max_loss']),'collected'] = df_trades['collected'].median()
                 df_trades['net'] = df_trades['collected'] - df_trades['lost'] - df_trades['commission']
+                df_trades['net_max_loss'] = df_trades['gross_max_loss'] - df_trades['collected']
                 df_trades['return_on_max_risk'] = df_trades['net'] / df_trades['net_max_loss']
                 df_trades['return_on_max_risk'] = df_trades['return_on_max_risk'].fillna(0)
                 # TODO : can we remove this intermediate calculation and do it in a one-liner
