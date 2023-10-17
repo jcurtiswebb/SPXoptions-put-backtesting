@@ -150,6 +150,7 @@ class AbstractStrategy(ABC):
         df_trades.drop(['daily_risk_free_return'],axis=1,inplace=True, errors='ignore')
         df_trades = pd.merge(df_trades, df_ty, left_on='trade_date', right_on='Date')
         df_trades.drop(['Date'],axis=1,inplace=True)
+        df_trades.fillna(0, inplace=True)
 
         
 
