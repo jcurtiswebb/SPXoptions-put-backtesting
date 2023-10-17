@@ -184,7 +184,7 @@ class AbstractStrategy(ABC):
                 # TODO change collected instead of net_max_loss and recalculate
                 # Fixing 
                 
-                self.df_trades_unrealistic = df_trades[df_trades[(df_trades['net_max_loss']<=0)|(df_trades['gross_max_loss']>10*df_trades['net_max_loss'])]].copy()
+                self.df_trades_unrealistic = df_trades[(df_trades['net_max_loss']<=0)|(df_trades['gross_max_loss']>10*df_trades['net_max_loss'])].copy()
                 print(f"Fixing {self.df_trades_unrealistic.shape[0]} trades. They are listed in the df_trades_unrealistic dataframe of the strategy object.")
                 
                 df_trades.loc[(df_trades['net_max_loss']<=0)|(df_trades['gross_max_loss']>10*df_trades['net_max_loss']),'collected'] = df_trades['collected'].median()
