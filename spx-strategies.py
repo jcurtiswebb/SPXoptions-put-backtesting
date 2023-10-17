@@ -163,6 +163,10 @@ class AbstractStrategy(ABC):
         lc_cols = [col for col in df_trades.columns.to_list() if 'strike_lc' in col]
         sp_cols = [col for col in df_trades.columns.to_list() if 'strike_sp' in col]
         lp_cols = [col for col in df_trades.columns.to_list() if 'strike_lp' in col]
+        
+        self.df_trades_dropped = df_trades[df_trades['trade_count'] <= 0.0].copy()
+        print(f"Dropped {self.df_trades_dropped.shape[0]} records because they had no trades on that day. They are available in df_trades_dropped")
+        df_trades.drop(df_trades[df_trades['trade_count'] <= 0.0].index, inplace=True)
 
         for col in df_trades.columns:
             df_trades['short_long_balance_call'] = df_trades[lc_cols].gt(0).sum(axis=1) - df_trades[sc_cols].gt(0).sum(axis=1)
@@ -177,6 +181,8 @@ class AbstractStrategy(ABC):
             df_trades['return_on_max_risk'] = df_trades['return_on_max_risk'].fillna(0)
             # TODO : can we remove this intermediate calculation and do it in a one-liner
             df_trades['scaled_return_on_max_risk'] = df_trades['return_on_max_risk']*self.max_bet_scaling + 1
+            
+            
             
             if self.fix_unrealistic_trades:
                 # TODO change collected instead of net_max_loss and recalculate
