@@ -108,6 +108,7 @@ class AbstractStrategy(ABC):
         self.df_trades_implausible = None
         self.remove_implausible_trades = False
         self.fix_unrealistic_trades = True
+        self.fix_threshold = 10
         
         # If another method overrode df_trades, we will respect it.
         if hasattr(self, 'df_trades') == False:
@@ -184,7 +185,7 @@ class AbstractStrategy(ABC):
                 self.df_trades_unrealistic = df_trades[(df_trades['net_max_loss']<=0)|(df_trades['gross_max_loss']>10*df_trades['net_max_loss'])].copy()
                 print(f"Fixing {self.df_trades_unrealistic.shape[0]} trades. They are listed in the df_trades_unrealistic dataframe of the strategy object.")
                 
-                df_trades.loc[(df_trades['net_max_loss']<=0)|(df_trades['gross_max_loss']>10*df_trades['net_max_loss']),'collected'] = df_trades['collected'].median()
+                df_trades.loc[(df_trades['net_max_loss']<=0)|(df_trades['gross_max_loss']>self.fix_threshold*df_trades['net_max_loss']),'collected'] = df_trades['collected'].median()
                 df_trades['net'] = df_trades['collected'] - df_trades['lost'] - df_trades['commission']
                 df_trades['net_max_loss'] = df_trades['gross_max_loss'] - df_trades['collected']
                 df_trades['return_on_max_risk'] = df_trades['net'] / df_trades['net_max_loss']
@@ -192,7 +193,7 @@ class AbstractStrategy(ABC):
                 # TODO : can we remove this intermediate calculation and do it in a one-liner
                 df_trades['scaled_return_on_max_risk'] = df_trades['return_on_max_risk']*self.max_bet_scaling + 1
             
-            self.df_trades_implausible = df_trades[df_trades['return_on_max_risk'] > 10.0].copy()
+            self.df_trades_implausible = df_trades[df_trades['return_on_max_risk'] > self.fix_threshold].copy()
             if self.remove_implausible_trades and self.df_trades_implausible.shape[0] > 0:
                 print(f"Dropping {self.df_trades_implausible.shape[0]} trades. They are listed in the df_trades_implausible dataframe of the strategy object.")
                 df_trades.drop(df_trades[df_trades['return_on_max_risk'] > 1.0].index, inplace=True)
