@@ -380,20 +380,26 @@ class AbstractStrategy(ABC):
     
 class AbstractPolicy(ABC):
     def getRoundedSlippedPrice(self,bid,ask, trans_type):
-#         mid = (bid + ask)/0.02
-#         if mid % 1 != 0.0:
-#             # We need to slip the bid/ask spread
-#             if trans_type == 'sell':
-#                 ask -= 0.05
-#             elif trans_type=='buy':
-#                 bid += 0.05
-
-#         mid = round((bid + ask)/0.02,1)
-
+        mid = (bid + ask)/0.02
+        
+        magnitude = ask - bid
+        second_slip = int(magnitude/20)*0.05
+        
         if trans_type == 'sell':
-            return bid*100
+            ask -= second_slip
         elif trans_type=='buy':
-            return ask*100
+            bid += second_slip
+        
+        if mid % 1 != 0.0:
+            # We need to slip the bid/ask spread
+            if trans_type == 'sell':
+                ask -= 0.05 + second_slip
+            elif trans_type=='buy':
+                bid += 0.05 + second_slip
+
+        mid = round((bid + ask)/0.02,1)
+
+
         
         return mid
     
