@@ -545,6 +545,49 @@ class OptionSelectorStaticEntryPolicy(AbstractStaticEntryPolicy):
     def __repr__(self):
         return str(self.option_selector)
     
+class DualOptionSelectorStaticEntryPolicy(AbstractStaticEntryPolicy):
+    def __init__(self, dte, trade_time, bear_option_selector, bull_option_selector, df_trend):
+        self.dte = dte
+        self.trade_time = trade_time
+        self.bear_option_selector = bear_option_selector
+        self.bull_option_selector = bull_option_selector
+        self.df_trend = df_trend
+        super().__init__()
+    
+    def populateTrades(self, df):
+        df_exp = df.loc[df[df['dte']==self.dte].groupby('expiration')['dte'].idxmin()]
+        df_dates = df_exp.loc[df_exp.groupby('quote_date')['dte'].idxmin()]
+        last_date = df_dates['quote_date'].max()
+        df_dates = df_dates[df_dates['expiration']<=last_date]
+        df_trades = df_dates[['quote_date','expiration']].copy()
+        df_trades.rename({'quote_date': 'trade_date'}, axis='columns', inplace=True)
+        df_trades['trade_count'] = 0
+        
+        bullish_days = self.df_trend[(self.df_trend['x_day_average']>0.00)].reset_index()['quote_date']
+        bearish_days = self.df_trend[(self.df_trend['x_day_average']<0.00)].reset_index()['quote_date']
+        
+        df_trades_bullish = df_trades[df_trades['trade_date'].isin(bullish_days)].copy()
+        df_trades_bearish = df_trades[df_trades['trade_date'].isin(bearish_days)].copy()
+        
+        df_data = df[(df['quote_time'] == self.trade_time) & (df['dte']==self.dte)]
+        
+        try:
+            df_trades_bullish = self.bull_option_selector.populateTrades(df_data, df_trades_bullish, self.get_contract_strike)
+            df_trades_bearish = self.bear_option_selector.populateTrades(df_data, df_trades_bearish, self.get_contract_strike)
+        except ValueError as ve:
+            print(f"Value error when populating trades for : {str(self)}. Were no trades found?")
+            
+        df_trades = pd.concat([df_trades_bullish,df_trades_bearish])
+        df_trades.sort_values(by=['trade_date'], inplace=True)
+        
+        return df_trades
+    
+    def __str__(self):
+        return str(self.bear_option_selector) + str(self.bull_option_selector)
+
+    def __repr__(self):
+        return str(self.bear_option_selector) + str(self.bull_option_selector)
+    
 # AbstractOptionSelector, DeltaOptionSelector, YieldOptionSelector
 class AbstractOptionSelector(ABC):
     @abstractmethod
